@@ -39,9 +39,9 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
 
 ### 1. Transparansi & Data
 - [x] **Data Anggaran** — Visualisasi APBDes 2026 (Dana Desa, ADD, PADes) dari Supabase.
-- [x] **Kegiatan Pembangunan** — Daftar proyek infrastruktur dengan progres, foto, dan lokasi dari Supabase.
+- [/] **Kegiatan Pembangunan** — Daftar proyek infrastruktur dengan progres, foto, dan lokasi dari Supabase.
 - [x] **Statistik Desa** — Demografi penduduk, pekerjaan, pendidikan, dan bansos dari Supabase.
-- [x] **Insight** — Analisis skor responsivitas pemerintah desa berdasarkan data laporan.
+- [/] **Insight** — Analisis skor responsivitas pemerintah desa berdasarkan data laporan.
 
 ### 2. Partisipasi Warga
 - [x] **Daftar Laporan** — Melihat laporan warga yang sudah masuk ke sistem.
