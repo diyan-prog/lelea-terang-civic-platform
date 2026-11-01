@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+@import 'leaflet/dist/leaflet.css';
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-teal: #0f8b8d;
+  --color-teal-deep: #0b4f5c;
+  --color-navy: #1e3a4c;
+  --color-body: #475569;
+  --color-sun: #f2b632;
+  --color-ok: #2f9e5b;
+  --color-bad: #d64545;
+  --color-info: #3b82f6;
+  --color-pale: #e3f1f2;
+  --color-line: #e2e8f0;
+  --radius-card: 16px;
+  --shadow-soft: 0 4px 24px -6px rgba(11, 79, 92, 0.12);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    font-family: var(--font-sans);
+    color: #475569;
+    background: #fff;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: #1e3a4c;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  :focus-visible {
+    outline: 3px solid #f2b632;
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  ::selection {
+    background: #b7e0e1;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+  }
+  *:hover {
+    scrollbar-color: #cbd5e1 transparent;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes slidein {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes fadeup {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slide-in {
+  animation: slidein 0.25s ease-out;
+}
+.fade-up {
+  animation: fadeup 0.3s ease-out;
+}
+
+@media print {
+  nav,
+  footer,
+  .no-print,
+  .bottom-nav {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+}
+
+/* Leaflet popup & controls */
+.leaflet-container {
+  font-family: inherit;
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 13px;
+  color: #1e3a4c;
+  line-height: 1.5;
+}
+.leaflet-popup-tip-container {
+  margin-top: -1px;
+}
+.leaflet-bar a {
+  color: #0f8b8d;
+}
+.leaflet-bar a:hover {
+  color: #0b4f5c;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+}
+
+/* Custom map pin markers */
+.lm-pin {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 36px;
+  height: 44px;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+  transition: transform 0.15s ease;
+}
+.lm-pin:hover {
+  transform: scale(1.15) translateY(-2px);
+}
+.lm-pin-drag {
+  cursor: grab;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+.lm-pin-drag:active {
+  cursor: grabbing;
+}
