@@ -15,9 +15,8 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
    ```
 
 2. **Install Dependensi**
-   Aplikasi menggunakan `pnpm` (lockfile v9.0).
    ```bash
-   pnpm install
+   npm install
    ```
 
 3. **Gunakan Mode Demo**
@@ -28,7 +27,7 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
 
 4. **Jalankan Aplikasi**
    ```bash
-   pnpm dev
+   npm run dev
    ```
    Aplikasi berjalan di [http://localhost:8443](http://localhost:8443).
    *Login demo: gunakan email dan password apa saja.*
