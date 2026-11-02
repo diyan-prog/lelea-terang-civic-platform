@@ -92,9 +92,10 @@ Berdasarkan data `seed.sql`, target anggaran 2026 adalah:
 ---
 
 ## Tim Pengembang
-- **Tim**: [Isi Nama Tim]
-- **Anggota**: [Isi Nama Anggota]
+- **Tim**: InfoKostZidan
+- **Anggota**: Zidan Fadhil Rahman - PoliteknikNegeri Indramayu
+               Arief Rachman Makarim Mudihardjo - PoliteknikNegeri Indramayu
+               DIYAN - PoliteknikNegeri Indramayu
 
 ## Akses Project
-- **Repository**: [Isi Link Repo]
-- **Demo Live**: [Isi Link Demo]
+- **Demo Live**: https://lelea-terang-civic-platform.vercel.app/
