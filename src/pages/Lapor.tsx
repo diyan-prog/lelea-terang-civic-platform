@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { Link, useNavigate, useSearchParams } from "react-router"
+import { z } from "zod"
 import {
   AlertTriangle,
   Camera,
@@ -25,6 +26,7 @@ import {
   cx,
 } from "../components/ui"
 import { actions, toast, useApp } from "../lib/store"
+import { useSubmitReport } from "../lib/api/laporan"
 import {
   CATEGORIES,
   CENTER,
@@ -35,6 +37,16 @@ import {
   type Report,
 } from "../lib/mock"
 import { CheckCircle2 } from "lucide-react"
+
+const reportSchema = z.object({
+  category: z.string().min(1, "Pilih salah satu kategori masalah"),
+  title: z.string().min(8, "Judul minimal 8 karakter"),
+  desc: z.string().min(20, "Ceritakan masalahnya minimal 20 karakter"),
+  dusun: z.string().min(1, "Pilih dusun"),
+  rw: z.string().min(1, "Pilih RW"),
+  lat: z.number({ invalid_type_error: "Lokasi wajib dipilih" }),
+  lng: z.number({ invalid_type_error: "Lokasi wajib dipilih" }),
+})
 
 const STEPS = ["Kategori", "Detail", "Lokasi & Foto", "Konfirmasi"]
 
@@ -59,6 +71,9 @@ export default function Lapor() {
     anonymous: false,
   })
   const [done, setDone] = useState<Report | null>(null)
+  const submitMutation = useSubmitReport()
+  const isDemo = import.meta.env.VITE_DEMO_MODE === "true" || !import.meta.env.VITE_SUPABASE_URL
+
   const up = (p: Partial<typeof d>) => setD({ ...d, ...p })
 
   const similar = reports.filter(
@@ -72,20 +87,30 @@ export default function Lapor() {
 
   const validate = (s: number) => {
     const e: Record<string, string> = {}
-    if (s === 0 && !d.category) e.category = "Pilih salah satu kategori masalah"
+    if (s === 0) {
+      const res = reportSchema.pick({ category: true }).safeParse(d)
+      if (!res.success) e.category = res.error.issues[0].message
+    }
     if (s === 1) {
-      if (d.title.trim().length < 8) e.title = "Judul minimal 8 karakter"
-      if (d.desc.trim().length < 20)
-        e.desc = "Ceritakan masalahnya minimal 20 karakter"
+      const res = reportSchema.pick({ title: true, desc: true }).safeParse(d)
+      if (!res.success) {
+        res.error.issues.forEach((is) => {
+          if (is.path[0]) e[is.path[0] as string] = is.message
+        })
+      }
     }
     if (s === 2) {
-      if (d.dusun === "") e.dusun = "Pilih dusun"
-      if (!d.rw) e.rw = "Pilih RW"
+      const res = reportSchema.pick({ dusun: true, rw: true, lat: true, lng: true }).safeParse(d)
+      if (!res.success) {
+        res.error.issues.forEach((is) => {
+          if (is.path[0]) e[is.path[0] as string] = is.message
+        })
+      }
     }
     setErrs(e)
     return !Object.keys(e).length
   }
-  const next = () => validate(step) && setStep(step + 1)
+
   const addPhotos = (files: FileList | null) => {
     if (!files) return
     const room = 3 - d.photos.length
@@ -101,6 +126,7 @@ export default function Lapor() {
         rd.readAsDataURL(f)
       })
   }
+
   const geo = () => {
     if (!navigator.geolocation)
       return toast("Lokasi tidak tersedia di perangkat ini", "err")
@@ -112,24 +138,68 @@ export default function Lapor() {
       () => toast("Izin lokasi ditolak. Geser pin pada peta.", "err"),
     )
   }
-  const submit = () => {
+
+  const next = () => validate(step) && setStep(step + 1)
+
+  const submit = async () => {
     if (![0, 1, 2].every(validate)) return
-    const r = actions.addReport({
-      title: d.title.trim(),
-      desc: d.desc.trim(),
-      category: d.category as CatId,
-      dusun: +d.dusun,
-      rw: d.rw,
-      lat: d.lat,
-      lng: d.lng,
-      photos: d.photos,
-      anonymous: d.anonymous,
-      projectId: d.projectId ? +d.projectId : undefined,
-      mismatch: d.mismatch && !!d.projectId,
-    })
-    setDone(r)
-    toast("Laporan berhasil dikirim")
-    window.scrollTo(0, 0)
+
+    if (isDemo) {
+      const r = actions.addReport({
+        title: d.title.trim(),
+        desc: d.desc.trim(),
+        category: d.category as CatId,
+        dusun: +d.dusun,
+        rw: d.rw,
+        lat: d.lat,
+        lng: d.lng,
+        photos: d.photos,
+        anonymous: d.anonymous,
+        projectId: d.projectId ? +d.projectId : undefined,
+        mismatch: d.mismatch && !!d.projectId,
+      })
+      setDone(r)
+      toast("Laporan berhasil dikirim (mode demo)")
+      window.scrollTo(0, 0)
+    } else {
+      try {
+        const result = await submitMutation.mutateAsync({
+          title: d.title.trim(),
+          description: d.desc.trim(),
+          category: d.category,
+          dusun_id: d.dusun,
+          rw: d.rw,
+          lat: d.lat,
+          lng: d.lng,
+          photos: d.photos,
+          anonymous: d.anonymous,
+          reporter_id: user ? String(user.dusun) : undefined,
+        })
+        const mockReport: Report = {
+          ticket: result.ticket,
+          title: result.title,
+          desc: result.description,
+          category: result.category as CatId,
+          dusun: Number(result.dusun_id) || 0,
+          rw: result.rw,
+          status: "Diterima",
+          createdAt: result.created_at,
+          confirmations: 0,
+          anonymous: result.anonymous,
+          reporter: user?.name || "Warga",
+          lat: result.lat,
+          lng: result.lng,
+          photos: d.photos,
+          updates: [{ status: "Diterima", note: "Laporan diterima.", at: result.created_at }],
+          slaDays: 3,
+        }
+        setDone(mockReport)
+        toast("Laporan berhasil dikirim ke database!")
+        window.scrollTo(0, 0)
+      } catch (err: any) {
+        toast("Gagal mengirim laporan: " + err.message, "err")
+      }
+    }
   }
 
   if (done)

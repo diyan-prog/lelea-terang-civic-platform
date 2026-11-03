@@ -208,22 +208,38 @@ export function ReportList() {
             }
           />
         ) : view === "map" ? (
-          <MapView
-            height={520}
-            pins={list.map((r) => ({
-              id: r.ticket,
-              lat: r.lat,
-              lng: r.lng,
-              label: `${r.title} (${r.status})`,
-              color:
-                r.status === "Selesai"
-                  ? "#2F9E5B"
-                  : isLate(r)
-                    ? "#D64545"
-                    : "#0F8B8D",
-              onClick: () => (location.href = `/laporan/${r.ticket}`),
-            }))}
-          />
+          <>
+            <div className="mb-4 flex flex-wrap gap-3 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#2F9E5B" }} />
+                <span>Selesai</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#D64545" }} />
+                <span>Terlambat</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: "#0F8B8D" }} />
+                <span>Diproses</span>
+              </div>
+            </div>
+            <MapView
+              height={520}
+              pins={list.map((r) => ({
+                id: r.ticket,
+                lat: r.lat,
+                lng: r.lng,
+                label: `${r.title} (${r.status})`,
+                color:
+                  r.status === "Selesai"
+                    ? "#2F9E5B"
+                    : isLate(r)
+                      ? "#D64545"
+                      : "#0F8B8D",
+                onClick: () => (location.href = `/laporan/${r.ticket}`),
+              }))}
+            />
+          </>
         ) : (
           <>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -451,18 +467,27 @@ export function ReportDetail() {
             <h2 className="mb-4 text-lg">Riwayat Penanganan</h2>
             <Timeline items={reportTimeline(r)} />
           </Card>
-          <MapView
-            height={220}
-            pins={[
-              {
-                id: r.ticket,
-                lat: r.lat,
-                lng: r.lng,
-                label: r.title,
-                color: "#D64545",
-              },
-            ]}
-          />
+          {r.lat && r.lng ? (
+            <MapView
+              height={220}
+              pins={[
+                {
+                  id: r.ticket,
+                  lat: r.lat,
+                  lng: r.lng,
+                  label: r.title,
+                  color: "#D64545",
+                },
+              ]}
+            />
+          ) : (
+            <Card>
+              <h2 className="mb-2 text-lg">Lokasi</h2>
+              <p className="text-sm">
+                {DUSUN_SHORT[r.dusun]}, RW {r.rw}
+              </p>
+            </Card>
+          )}
         </div>
       </div>
     </Container>

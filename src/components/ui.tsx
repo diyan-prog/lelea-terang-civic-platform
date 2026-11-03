@@ -819,6 +819,17 @@ export interface Pin {
 import L from "leaflet"
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
+import MarkerClusterGroup from "react-leaflet-cluster"
+
+// Fix ikon default leaflet
+import icon from "leaflet/dist/images/marker-icon.png"
+import iconShadow from "leaflet/dist/images/marker-shadow.png"
+L.Marker.prototype.options.icon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+})
 
 function FitBounds({ pins }: { pins: Pin[] }) {
   const map = useMap()
@@ -863,7 +874,6 @@ export function LeafletMap({
   drag?: { lat: number; lng: number; onChange: (lat: number, lng: number) => void }
   className?: string
 }) {
-  // Default center: village center, overridden by FitBounds
   const center: [number, number] = [CENTER.lat, CENTER.lng]
 
   return (
@@ -875,19 +885,21 @@ export function LeafletMap({
         zoomControl
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {pins.map((p) => (
-          <Marker
-            key={p.id}
-            position={[p.lat, p.lng]}
-            icon={makePin(p.color ?? "#0F8B8D", false)}
-            eventHandlers={{ click: () => p.onClick?.() }}
-          >
-            {p.label && <Popup>{p.label}</Popup>}
-          </Marker>
-        ))}
+        <MarkerClusterGroup chunkedLoading>
+          {pins.map((p) => (
+            <Marker
+              key={p.id}
+              position={[p.lat, p.lng]}
+              icon={makePin(p.color ?? "#0F8B8D", false)}
+              eventHandlers={{ click: () => p.onClick?.() }}
+            >
+              {p.label && <Popup>{p.label}</Popup>}
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
         {drag && (
           <Marker
             position={[drag.lat, drag.lng]}

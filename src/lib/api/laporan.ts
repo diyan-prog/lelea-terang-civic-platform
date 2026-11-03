@@ -41,13 +41,19 @@ export const useSubmitReport = () => {
       rw: string; lat: number; lng: number; anonymous: boolean;
       photos?: string[]; reporter_id?: string;
     }) => {
-      const ticket = `LAP-${Date.now()}`;
       const { data, error } = await supabase.from('reports').insert({
-        ticket, status: 'Diterima', ...payload, mismatch: false, confirmations: 0,
+        judul: payload.title,
+        deskripsi: payload.description,
+        kategori: payload.category,
+        dusun_id: parseInt(payload.dusun_id),
+        rw: parseInt(payload.rw),
+        lat: payload.lat,
+        lng: payload.lng,
+        is_anonymous: payload.anonymous,
+        reporter_id: payload.reporter_id || null,
       }).select().single();
       if (error) throw error;
-      await supabase.from('report_updates').insert({ report_id: data.id, status: 'Diterima', note: 'Laporan diterima.' });
-      return data as Report;
+      return data;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['reports'] }); },
   });

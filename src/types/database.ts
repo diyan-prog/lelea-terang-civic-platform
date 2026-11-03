@@ -41,19 +41,19 @@ export interface Database {
       }
       reports: {
         Row: {
-          id: string; ticket: string; title: string; description: string; category: string; dusun_id: string;
-          rw: string; status: string; reporter_id: string | null; anonymous: boolean; lat: number; lng: number;
-          confirmations: number; mismatch: boolean; rating: number | null; created_at: string;
+          id: string; ticket_code: string; judul: string; deskripsi: string; kategori: string; dusun_id: number;
+          rw: number; status: string; reporter_id: string | null; is_anonymous: boolean; lat: number | null; lng: number | null;
+          confirmation_count: number; mismatch_flag: boolean; rating: number | null; created_at: string;
         }
         Insert: {
-          id?: string; ticket?: string; title: string; description: string; category: string; dusun_id: string;
-          rw: string; status?: string; reporter_id?: string | null; anonymous?: boolean; lat: number; lng: number;
-          mismatch?: boolean;
+          id?: string; ticket_code?: string; judul: string; deskripsi: string; kategori: string; dusun_id: number;
+          rw: number; status?: string; reporter_id?: string | null; is_anonymous?: boolean; lat?: number | null; lng?: number | null;
+          mismatch_flag?: boolean;
         }
         Update: {
-          id?: string; ticket?: string; title?: string; description?: string; category?: string; dusun_id?: string;
-          rw?: string; status?: string; reporter_id?: string | null; anonymous?: boolean; lat?: number; lng?: number;
-          confirmations?: number; mismatch?: boolean; rating?: number | null;
+          id?: string; ticket_code?: string; judul?: string; deskripsi?: string; kategori?: string; dusun_id?: number;
+          rw?: number; status?: string; reporter_id?: string | null; is_anonymous?: boolean; lat?: number | null; lng?: number | null;
+          confirmation_count?: number; mismatch_flag?: boolean; rating?: number | null;
         }
       }
       report_updates: {
