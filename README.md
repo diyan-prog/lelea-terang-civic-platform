@@ -33,8 +33,8 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
 
 ### Akun Demo (Untuk Mode Database)
 Jika menggunakan database Supabase asli (`VITE_DEMO_MODE=false`), gunakan kredensial berikut:
-- **Admin**: `admin@lelea.id` / `password123` (Akses penuh ke dashboard admin)
-- **Warga (Arif)**: `arif@lelea.id` / `password123` (Akses fitur lapor dan layanan warga)
+- **Admin**: `admin@gmai.com` / `leleaterang` (Akses penuh ke dashboard admin)
+- **Warga (Arif)**: `arif@gmail.com` / `123456789` (Akses fitur lapor dan layanan warga)
 
 ---
 
@@ -42,9 +42,9 @@ Jika menggunakan database Supabase asli (`VITE_DEMO_MODE=false`), gunakan kreden
 
 ### 1. Transparansi & Data
 - [x] **Data Anggaran** — Visualisasi APBDes 2026 (Dana Desa, ADD, PADes) dari Supabase.
-- [/] **Kegiatan Pembangunan** — Daftar proyek infrastruktur dengan progres, foto, dan lokasi dari Supabase.
+- [x] **Kegiatan Pembangunan** — Daftar proyek infrastruktur dengan progres, foto, dan lokasi dari Supabase.
 - [x] **Statistik Desa** — Demografi penduduk, pekerjaan, pendidikan, dan bansos dari Supabase.
-- [/] **Insight** — Analisis skor responsivitas pemerintah desa berdasarkan data laporan.
+- [x] **Insight** — Analisis skor responsivitas pemerintah desa berdasarkan data laporan.
 
 ### 2. Partisipasi Warga
 - [x] **Daftar Laporan** — Melihat laporan warga yang sudah masuk ke sistem dari Supabase.
