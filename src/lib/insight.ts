@@ -11,21 +11,6 @@ import {
   type BudgetItem,
 } from "./mock"
 
-export const ARCHIVE = {
-  months: [
-    { m: "Mei", masuk: 10, selesai: 10 },
-    { m: "Jun", masuk: 14, selesai: 13 },
-    { m: "Jul", masuk: 16, selesai: 15 },
-    { m: "Agu", masuk: 18, selesai: 17 },
-    { m: "Sep", masuk: 22, selesai: 21 },
-  ],
-  total: 80,
-  selesai: 76,
-  fast: 62,
-  onTime: 70,
-  ratingSum: 176,
-  ratingN: 40,
-}
 const BIDANG_OF: Record<CatId, string> = {
   jalan: BIDANG[1],
   irigasi: BIDANG[1],
@@ -41,28 +26,27 @@ export function computeInsight(
   budget: BudgetItem[],
   year = 2026,
 ) {
-  const n = reports.length + ARCHIVE.total
+  const n = reports.length || 1
   const fastLive = reports.filter((r) =>
     r.updates.length < 2
       ? Date.now() - +new Date(r.createdAt) < 48 * 3600e3
       : +new Date(r.updates[1].at) - +new Date(r.createdAt) <= 48 * 3600e3,
   ).length
-  const resp = Math.round(((fastLive + ARCHIVE.fast) / n) * 100)
+  const resp = Math.round((fastLive / n) * 100)
   const selesaiLive = reports.filter((r) => r.status === "Selesai").length
-  const done = Math.round(((selesaiLive + ARCHIVE.selesai) / n) * 100)
+  const done = Math.round((selesaiLive / n) * 100)
   const late = reports.filter(isLate).length
   const sla = Math.round(
-    ((n - late - (ARCHIVE.total - ARCHIVE.onTime)) / n) * 100,
+    ((n - late) / n) * 100,
   )
   const rated = reports.filter((r) => r.rating)
-  const ratingAvg =
-    (ARCHIVE.ratingSum + rated.reduce((a, r) => a + (r.rating ?? 0), 0)) /
-    (ARCHIVE.ratingN + rated.length)
+  const ratingAvg = rated.length > 0
+    ? rated.reduce((a, r) => a + (r.rating ?? 0), 0) / rated.length
+    : 0
   const rating = Math.round((ratingAvg / 5) * 100)
   const score = Math.round(resp * 0.3 + done * 0.3 + sla * 0.25 + rating * 0.15)
 
   const monthly = [
-    ...ARCHIVE.months,
     { m: "Okt", masuk: reports.length, selesai: selesaiLive },
   ]
   const heat = DUSUN_SHORT.map((_, d) =>
@@ -164,6 +148,6 @@ export function computeInsight(
     perBidang,
     recs,
     late,
-    selesaiTotal: selesaiLive + ARCHIVE.selesai,
+    selesaiTotal: selesaiLive,
   }
 }

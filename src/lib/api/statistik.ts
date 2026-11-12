@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../supabase';
 import { Database } from '../../types/database';
+import { mapDbReport } from './laporan';
+import { isLate } from '../mock';
 
 export type StatsDusun = Database['public']['Tables']['desa_stats_dusun']['Row'];
 export type StatsUsia = Database['public']['Tables']['desa_stats_usia']['Row'];
@@ -69,21 +71,7 @@ export const useStatsBansos = () =>
     },
   });
 
-const ARCHIVE = {
-  months: [
-    { m: "Mei", masuk: 10, selesai: 10 },
-    { m: "Jun", masuk: 14, selesai: 13 },
-    { m: "Jul", masuk: 16, selesai: 15 },
-    { m: "Agu", masuk: 18, selesai: 17 },
-    { m: "Sep", masuk: 22, selesai: 21 },
-  ],
-  total: 80,
-  selesai: 76,
-  fast: 62,
-  onTime: 70,
-  ratingSum: 176,
-  ratingN: 40,
-};
+
 
 export const useStats = () =>
   useQuery({
@@ -100,39 +88,33 @@ export const useStats = () =>
       const allocated = (budgets || [])
         .reduce((sum, b) => sum + (b.allocated || 0), 0);
       
-      const { data: reports } = await supabase.from('reports').select('*');
-      const reportList = reports || [];
-      const selesaiLive = reportList.filter(r => r.status === 'Selesai').length;
+      const { data: dbReports } = await supabase.from('reports').select('*, updates:report_updates(*), photos:report_photos(*)');
+      const reports = (dbReports || []).map(mapDbReport);
+      const selesaiLive = reports.filter(r => r.status === 'Selesai').length;
       
       // Calculate weighted score like Insight page
-      const n = reportList.length + ARCHIVE.total;
+      const n = reports.length || 1;
       
       // Fast response (< 48 hours)
-      const fastLive = reportList.filter((r: any) =>
-        r.updates?.length < 2
-          ? Date.now() - new Date(r.created_at).getTime() < 48 * 3600e3
-          : new Date(r.updates?.[1]?.created_at).getTime() - new Date(r.created_at).getTime() <= 48 * 3600e3
+      const fastLive = reports.filter((r) =>
+        r.updates.length < 2
+          ? Date.now() - +new Date(r.createdAt) < 48 * 3600e3
+          : +new Date(r.updates[1].at) - +new Date(r.createdAt) <= 48 * 3600e3
       ).length;
-      const resp = Math.round(((fastLive + ARCHIVE.fast) / n) * 100);
+      const resp = Math.round((fastLive / n) * 100);
       
       // Completed reports
-      const done = Math.round(((selesaiLive + ARCHIVE.selesai) / n) * 100);
+      const done = Math.round((selesaiLive / n) * 100);
       
-      // SLA compliance - simplified: use late reports
-      const isLate = (r: any) => {
-        const created = new Date(r.created_at).getTime();
-        const now = Date.now();
-        const days = (now - created) / (24 * 3600e3);
-        return days > 14 && r.status !== 'Selesai';
-      };
-      const late = reportList.filter(isLate).length;
-      const sla = Math.round(((n - late - (ARCHIVE.total - ARCHIVE.onTime)) / n) * 100);
+      // SLA compliance - use mock isLate
+      const late = reports.filter(isLate).length;
+      const sla = Math.round(((n - late) / n) * 100);
       
       // Rating satisfaction - simplified
-      const rated = reportList.filter((r: any) => r.rating);
+      const rated = reports.filter((r) => r.rating);
       const ratingAvg = rated.length > 0
-        ? (ARCHIVE.ratingSum + rated.reduce((a, r: any) => a + (r.rating || 0), 0)) / (ARCHIVE.ratingN + rated.length)
-        : ARCHIVE.ratingSum / ARCHIVE.ratingN;
+        ? rated.reduce((a, r) => a + (r.rating || 0), 0) / rated.length
+        : 0;
       const rating = Math.round((ratingAvg / 5) * 100);
       
       // Weighted score: 30% resp + 30% done + 25% sla + 15% rating
@@ -140,7 +122,7 @@ export const useStats = () =>
 
       return {
         serap: allocated > 0 ? Math.round((realized / allocated) * 100) : 0,
-        selesaiTotal: selesaiLive + ARCHIVE.selesai,
+        selesaiTotal: selesaiLive,
         score
       };
     },
