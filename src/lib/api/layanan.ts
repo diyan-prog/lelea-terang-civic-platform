@@ -5,15 +5,23 @@ import type { Database } from '../../types/database';
 export type ServiceRequest = Database['public']['Tables']['service_requests']['Row'];
 export type ServiceAttachment = Database['public']['Tables']['service_attachments']['Row'];
 
-export const useServiceRequests = (email?: string) =>
+export const useServiceRequests = (userId?: string, email?: string) =>
   useQuery({
-    queryKey: ['services', email],
+    queryKey: ['services', userId, email],
     queryFn: async () => {
       let query = supabase
         .from('service_requests')
         .select('*, updates:service_updates(*), attachments:service_attachments(*)')
         .order('created_at', { ascending: false });
-      if (email) query = query.eq('email', email);
+      
+      if (userId && email) {
+        query = query.or(`user_id.eq.${userId},email.eq.${email}`);
+      } else if (userId) {
+        query = query.eq('user_id', userId);
+      } else if (email) {
+        query = query.eq('email', email);
+      }
+
       const { data, error } = await query;
       if (error) throw error;
       return (data as ServiceRequest[]) || [];
@@ -25,6 +33,7 @@ export const useSubmitService = () => {
   return useMutation({
     mutationFn: async (payload: {
       type: string;
+      user_id: string;
       email: string;
       name: string;
       purpose: string;
@@ -40,6 +49,7 @@ export const useSubmitService = () => {
         .insert({
           ticket,
           type: payload.type,
+          user_id: payload.user_id,
           email: payload.email,
           name: payload.name,
           purpose: payload.purpose,

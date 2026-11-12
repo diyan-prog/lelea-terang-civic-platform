@@ -13,8 +13,12 @@ export const SERVICE_FLOW: SStatus[] = [
 export const svcName = (id: string) =>
   SERVICES.find((s) => s.id === id)?.name ?? id
 export function svcTimeline(s: ServiceReq): TLItem[] {
+  const updates = (s.updates || []).map((u: any) => ({
+    ...u,
+    at: u.at || u.created_at
+  }))
   const items: TLItem[] = SERVICE_FLOW.map((st) => {
-    const u = [...s.updates].reverse().find((x) => x.status === st)
+    const u = [...updates].reverse().find((x) => x.status === st)
     const idx = SERVICE_FLOW.indexOf(s.status)
     return {
       title: st,
@@ -23,7 +27,7 @@ export function svcTimeline(s: ServiceReq): TLItem[] {
       note: u?.note,
     }
   })
-  const rej = s.updates.find((u) => u.status === "Ditolak")
+  const rej = updates.find((u: any) => u.status === "Ditolak")
   const base = rej ? items.filter((i) => i.done) : items
   return rej
     ? [...base, { title: "Ditolak", done: true, at: rej.at, note: rej.note }]
@@ -61,7 +65,7 @@ export function ServiceList({ list }: { list: ServiceReq[] }) {
             <div className="min-w-0 flex-1">
               <div className="font-bold text-navy">{svcName(s.type)}</div>
               <div className="text-xs text-slate-500">
-                {s.ticket} • {fmtDate(s.createdAt)}
+                {s.ticket} • {fmtDate((s as any).createdAt ?? (s as any).created_at)}
               </div>
             </div>
             <StatusBadge status={s.status} />

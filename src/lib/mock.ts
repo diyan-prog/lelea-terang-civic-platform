@@ -1,14 +1,16 @@
 // Semua data di berkas ini adalah DATA CONTOH.
-export type Role = "warga" | "perangkat" | "admin"
+export type Role = "warga" | "admin"
 export type RStatus = "Diterima" | "Diverifikasi" | "Diproses" | "Selesai" | "Ditolak"
 export type CatId = "jalan" | "irigasi" | "sampah" | "lampu" | "air" | "dugaan"
 
 export const DUSUN = [
   "Blok Ilir",
   "Blok Weluntas",
+  "Blok 3",
+  "Blok 4",
 ]
-export const DUSUN_SHORT = ["Ilir", "Weluntas"]
-export const CENTER = { lat: -6.3846, lng: 108.2022 }
+export const DUSUN_SHORT = ["Ilir", "Weluntas", "Blok 3", "Blok 4"]
+export const CENTER = { lat: -6.420, lng: 108.251 }
 
 export const CATEGORIES: { id: CatId; label: string; hint: string }[] = [
   { id: "jalan", label: "Jalan Rusak", hint: "Jalan berlubang, retak, atau amblas" },
@@ -18,7 +20,7 @@ export const CATEGORIES: { id: CatId; label: string; hint: string }[] = [
   { id: "air", label: "Air Bersih", hint: "Air macet, keruh, atau pipa bocor" },
   { id: "dugaan", label: "Dugaan Penyimpangan", hint: "Dugaan penyalahgunaan dana atau wewenang" },
 ]
-export const catLabel = (id: CatId) => CATEGORIES.find((c) => c.id === id)!.label
+export const catLabel = (id: CatId) => CATEGORIES.find((c) => c.id === id)?.label || 'Lainnya'
 
 export interface Update { status: RStatus; note: string; at: string; photo?: string }
 export interface Report {
@@ -176,7 +178,6 @@ export const SERVICE_REQS: ServiceReq[] = []
 export interface User { name: string; email: string; role: Role; dusun: number; hp: string }
 export const DEMO_USERS: Record<Role, User> = {
   warga: { name: "Siti Aminah", email: "warga@lelea.id", role: "warga", dusun: 0, hp: "081234567890" },
-  perangkat: { name: "Hendra Gunawan", email: "perangkat@lelea.id", role: "perangkat", dusun: 0, hp: "081200001111" },
   admin: { name: "Nurul Hidayah", email: "admin@lelea.id", role: "admin", dusun: 0, hp: "081200002222" },
 }
-export const ALL_USERS: User[] = [DEMO_USERS.warga, DEMO_USERS.perangkat, DEMO_USERS.admin]
+export const ALL_USERS: User[] = [DEMO_USERS.warga, DEMO_USERS.admin]

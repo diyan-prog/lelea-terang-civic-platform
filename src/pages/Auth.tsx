@@ -257,15 +257,15 @@ export function Register() {
     if (Object.keys(x).length) return
 
     const { error } = await supabase.auth.signUp({
-      email: f.email,
+      email: f.email.trim(),
       password: f.pw,
       options: {
         data: {
           full_name: f.name.trim(),
           phone: f.hp,
           dusun_id: f.dusun,
-        }
-      }
+        },
+      },
     })
 
     if (error) {
@@ -404,7 +404,15 @@ export function Forgot() {
     })
 
     if (error) {
-      setErr(error.message)
+      if (
+        error.message.includes("48") ||
+        error.message.includes("security") ||
+        error.message.includes("after")
+      ) {
+        setErr("Untuk alasan keamanan, silakan tunggu sebelum mencoba lagi. Cek juga folder spam email Anda.")
+      } else {
+        setErr(error.message)
+      }
       return
     }
 
@@ -423,7 +431,7 @@ export function Forgot() {
             <h1 className="mt-4 text-[26px]">Cek email Anda</h1>
             <p className="mt-2">
               Jika {email} terdaftar, tautan untuk mengatur ulang password sudah
-              kami kirim ke email Anda.
+              kami kirim ke email Anda. Cukup klik tautan tersebut untuk membuat password baru.
             </p>
           </>
         ) : (

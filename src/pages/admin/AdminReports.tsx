@@ -5,6 +5,7 @@ import {
   ImagePlus,
   Inbox,
   Loader,
+  ShieldCheck,
 } from "lucide-react"
 import {
   Button,
@@ -23,14 +24,37 @@ import {
   inputCls,
   reportTimeline,
 } from "../../components/ui"
-import { actions, toast, useApp } from "../../lib/store"
-import {
-  DUSUN_SHORT,
-  catLabel,
-  isLate,
-  priorityOf,
-  type RStatus,
-} from "../../lib/mock"
+import { toast, useApp, actions } from "../../lib/store"
+import { DUSUN_SHORT, catLabel, type RStatus } from "../../lib/mock"
+import { useAuth } from "../../lib/auth"
+import { useAdminReports, useUpdateReportStatus, type Report } from "../../lib/api/laporan"
+
+const isLate = (r: Report) => 
+  !['Selesai', 'Ditolak'].includes(r.status) && r.sla_selesai_due ? new Date() > new Date(r.sla_selesai_due) : false;
+const priorityOf = (r: Report) =>
+  r.category === "dugaan_penyimpangan" || r.mismatch_flag || (r.confirmation_count ?? 0) >= 3
+    ? "Tinggi"
+    : "Normal"
+
+const toUiReport = (r: Report): any => ({
+  ticket: r.ticket,
+  title: r.title,
+  desc: r.description,
+  category: r.category,
+  dusun: r.dusun_id ? r.dusun_id - 1 : 0,
+  rw: r.rw,
+  status: r.status,
+  createdAt: r.created_at,
+  confirmations: r.confirmation_count ?? 0,
+  anonymous: r.anonymous ?? false,
+  reporter: r.anonymous ? "Anonim" : "Warga",
+  lat: r.lat,
+  lng: r.lng,
+  photos: (r as any).photos?.map((p: any) => p.url) ?? [],
+  updates: (r as any).updates ?? [],
+  mismatch: r.mismatch_flag,
+  slaDays: 3,
+})
 
 export const AdminTitle = ({
   title,
@@ -42,9 +66,14 @@ export const AdminTitle = ({
   children?: React.ReactNode
 }) => (
   <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-    <div>
-      <h1 className="text-[28px]">{title}</h1>
-      {sub && <p className="text-sm">{sub}</p>}
+    <div className="flex items-center gap-3">
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal text-white shadow-soft">
+        <ShieldCheck size={26} />
+      </div>
+      <div>
+        <h1 className="text-[28px] font-bold text-navy">{title}</h1>
+        {sub && <p className="text-sm text-slate-500">{sub}</p>}
+      </div>
     </div>
     {children}
   </div>
@@ -58,17 +87,23 @@ export const thCls =
   "bg-pale/70 px-3 py-3 text-left text-sm font-bold text-navy"
 
 export default function AdminReports() {
-  const { reports } = useApp()
+  const { user } = useAuth()
+  const { data: reports = [], isLoading } = useAdminReports()
+  const updateStatus = useUpdateReportStatus()
+
   const [chip, setChip] = useState("Semua")
   const [sel, setSel] = useState<string | null>(null)
   const [status, setStatus] = useState<RStatus>("Diterima")
   const [note, setNote] = useState("")
   const [photo, setPhoto] = useState<string>()
   const [err, setErr] = useState("")
-  const r = reports.find((x) => x.ticket === sel)
+  
+  const uiReports = reports.map(toUiReport)
+  const r = reports.find((x: any) => x.ticket === sel) as any
+  const uiR = r ? toUiReport(r) : null
   const month = new Date().getMonth()
-  const list = reports.filter(
-    (x) =>
+  const list = uiReports.filter(
+    (x: any) =>
       chip === "Semua" ||
       (chip === "Terlambat"
         ? isLate(x)
@@ -79,23 +114,33 @@ export default function AdminReports() {
   const open = (t: string) => {
     const x = reports.find((y) => y.ticket === t)!
     setSel(t)
-    setStatus(x.status)
+    setStatus(x.status as RStatus)
     setNote("")
     setPhoto(undefined)
     setErr("")
   }
-  const save = () => {
-    if (!r) return
+  const save = async () => {
+    if (!r || !user) return
     if (!note.trim())
       return setErr(
         status === "Ditolak"
           ? "Alasan penolakan wajib diisi"
           : "Catatan wajib diisi agar warga tahu perkembangannya",
       )
-    actions.updateReport(r.ticket, status, note.trim(), photo)
-    toast(`Laporan ${r.ticket} diperbarui`)
-    setSel(null)
+    try {
+      await updateStatus.mutateAsync({
+        reportId: r.id,
+        status,
+        note: note.trim(),
+        staffId: user.id
+      })
+      toast(`Laporan ${r.ticket} diperbarui`)
+      setSel(null)
+    } catch {
+      toast("Gagal memperbarui status laporan", "err")
+    }
   }
+
   return (
     <>
       <AdminTitle
@@ -105,20 +150,20 @@ export default function AdminReports() {
       <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           icon={Inbox}
-          value={reports.filter((x) => x.status === "Diterima").length}
+          value={uiReports.filter((x) => x.status === "Diterima").length}
           label="Baru"
-          tone="blue"
+          tone="teal"
         />
         <StatCard
           icon={Loader}
-          value={reports.filter((x) => x.status === "Diproses").length}
+          value={uiReports.filter((x) => x.status === "Diproses").length}
           label="Diproses"
           tone="yellow"
         />
         <StatCard
           icon={AlertTriangle}
           value={
-            <span className="text-bad">{reports.filter(isLate).length}</span>
+            <span className="text-bad">{uiReports.filter(isLate).length}</span>
           }
           label="Terlambat"
           tone="red"
@@ -126,9 +171,10 @@ export default function AdminReports() {
         <StatCard
           icon={CheckCircle2}
           value={
-            reports.filter(
+            uiReports.filter(
               (x) =>
                 x.status === "Selesai" &&
+                x.updates.length > 0 &&
                 new Date(x.updates.at(-1)!.at).getMonth() === month,
             ).length
           }
@@ -152,104 +198,106 @@ export default function AdminReports() {
           </Chip>
         ))}
       </div>
-      <TableWrap>
-        <table className="w-full min-w-[900px] text-sm">
-          <thead>
-            <tr>
-              {[
-                "Tiket",
-                "Judul",
-                "Dusun",
-                "Prioritas",
-                "SLA",
-                "Status",
-                "Aksi",
-              ].map((h) => (
-                <th key={h} className={thCls}>
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {list.map((x) => (
-              <tr
-                key={x.ticket}
-                className="border-t border-line hover:bg-pale/30"
-              >
-                <td className="whitespace-nowrap px-3 py-3 font-bold text-navy">
-                  {x.ticket}
-                </td>
-                <td className="max-w-[260px] px-3 py-3">
-                  {x.title}
-                  <div className="text-xs text-slate-500">
-                    {catLabel(x.category)}
-                  </div>
-                </td>
-                <td className="px-3 py-3">{DUSUN_SHORT[x.dusun]}</td>
-                <td className="px-3 py-3">
-                  <StatusBadge status={priorityOf(x)} />
-                </td>
-                <td className="px-3 py-3">
-                  <SLAIndicator report={x} compact />
-                </td>
-                <td className="px-3 py-3">
-                  <div className="flex flex-col items-start gap-1">
-                    <StatusBadge status={x.status} />
-                    <LateBadge r={x} />
-                  </div>
-                </td>
-                <td className="px-3 py-3">
-                  <Button
-                    variant="secondary"
-                    className="!min-h-9 !px-3"
-                    onClick={() => open(x.ticket)}
-                  >
-                    Tangani
-                  </Button>
-                </td>
-              </tr>
-            ))}
-            {!list.length && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
               <tr>
-                <td colSpan={7} className="p-8 text-center">
-                  Tidak ada laporan pada filter ini.
-                </td>
+                {[
+                  "Tiket",
+                  "Judul",
+                  "Dusun",
+                  "Prioritas",
+                  "SLA",
+                  "Status",
+                  "Aksi",
+                ].map((h) => (
+                  <th key={h} className={thCls}>
+                    {h}
+                  </th>
+                ))}
               </tr>
-            )}
-          </tbody>
-        </table>
-      </TableWrap>
+            </thead>
+            <tbody>
+              {list.map((x) => (
+                <tr
+                  key={x.ticket}
+                  className="border-t border-line hover:bg-pale/30"
+                >
+                  <td className="whitespace-nowrap px-3 py-3 font-bold text-navy">
+                    {x.ticket}
+                  </td>
+                  <td className="max-w-[260px] px-3 py-3">
+                    {x.title}
+                    <div className="text-xs text-slate-500">
+                      {catLabel(x.category)}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">{DUSUN_SHORT[x.dusun]}</td>
+                  <td className="px-3 py-3">
+                    <StatusBadge status={priorityOf(x)} />
+                  </td>
+                  <td className="px-3 py-3">
+                    <SLAIndicator report={x} compact />
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-col items-start gap-1">
+                      <StatusBadge status={x.status} />
+                      <LateBadge r={x} />
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <Button
+                      variant="secondary"
+                      className="!min-h-9 !px-3"
+                      onClick={() => open(x.ticket)}
+                    >
+                      Tangani
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {!list.length && (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center">
+                    Tidak ada laporan pada filter ini.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       <SlideOver
-        open={!!r}
+        open={!!uiR}
         onClose={() => setSel(null)}
-        title={r ? r.ticket : ""}
+        title={uiR ? uiR.ticket : ""}
         footer={
-          <>
-            <Button className="flex-1" onClick={save}>
-              Simpan perubahan
-            </Button>
-            <Button variant="ghost" onClick={() => setSel(null)}>
-              Batal
-            </Button>
-          </>
+          uiR && (
+            <>
+              <Button className="flex-1" onClick={save}>
+                Simpan perubahan
+              </Button>
+              <Button variant="ghost" onClick={() => setSel(null)}>
+                Batal
+              </Button>
+            </>
+          )
         }
       >
-        {r && (
+        {uiR && (
           <>
             <div>
-              <h3 className="text-xl">{r.title}</h3>
+              <h3 className="text-xl">{uiR.title}</h3>
               <p className="mt-1 text-sm">
-                {catLabel(r.category)} • {DUSUN_SHORT[r.dusun]}, RW {r.rw} •
-                Pelapor: {r.anonymous ? "Anonim" : r.reporter}
+                {catLabel(uiR.category)} • {DUSUN_SHORT[uiR.dusun]}, RW {uiR.rw} •
+                Pelapor: {uiR.reporter}
               </p>
-              <p className="mt-2">{r.desc}</p>
+              <p className="mt-2">{uiR.desc}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {(r.photos.length ? r.photos : [undefined]).map((p, i) => (
+              {(uiR.photos.length ? uiR.photos : [undefined]).map((p: any, i: number) => (
                 <Thumb
                   key={i}
-                  category={r.category}
+                  category={uiR.category}
                   src={p}
                   className="h-28 w-full rounded-xl"
                 />
@@ -260,15 +308,15 @@ export default function AdminReports() {
               pins={[
                 {
                   id: 1,
-                  lat: r.lat,
-                  lng: r.lng,
-                  label: r.title,
+                  lat: uiR.lat,
+                  lng: uiR.lng,
+                  label: uiR.title,
                   color: "#D64545",
                 },
               ]}
             />
-            <SLAIndicator report={r} />
-            <Timeline items={reportTimeline(r)} />
+            <SLAIndicator report={uiR} />
+            <Timeline items={reportTimeline(uiR)} />
             <hr className="border-line" />
             <Field label="Ubah status">
               <Select

@@ -43,14 +43,14 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
 - [/] **Insight** — Analisis skor responsivitas pemerintah desa berdasarkan data laporan.
 
 ### 2. Partisipasi Warga
-- [x] **Daftar Laporan** — Melihat laporan warga yang sudah masuk ke sistem.
-- [x] **Lacak Tiket** — Pencarian status laporan menggunakan kode tiket.
-- [/] **Form Lapor** — UI selesai, belum terhubung ke database.
-- [/] **Layanan Surat** — UI selesai, belum terhubung ke database.
+- [x] **Daftar Laporan** — Melihat laporan warga yang sudah masuk ke sistem dari Supabase.
+- [x] **Lacak Tiket** — Pencarian status laporan menggunakan kode tiket dari Supabase.
+- [x] **Form Lapor** — Terhubung ke database Supabase dengan dukungan unggah foto.
+- [x] **Layanan Surat** — Terhubung ke database Supabase dengan dukungan unggah lampiran dokumen.
 
 ### 3. Autentikasi & Admin
 - [x] **Auth** — Login dan Register terintegrasi Supabase Auth.
-- [x] **Admin Dashboard** — Panel modern untuk mengelola data anggaran dan kegiatan (khusus akun role `admin`).
+- [x] **Admin Dashboard** — Panel modern untuk mengelola data anggaran, kegiatan, status laporan, dan pengajuan layanan (khusus akun role `admin` atau `perangkat`).
 
 ---
 

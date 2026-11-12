@@ -27,6 +27,7 @@ import {
 } from "../components/ui"
 import { actions, toast, useApp } from "../lib/store"
 import { useSubmitReport } from "../lib/api/laporan"
+import { useAuth } from "../lib/auth"
 import {
   CATEGORIES,
   CENTER,
@@ -72,6 +73,7 @@ export default function Lapor() {
   })
   const [done, setDone] = useState<Report | null>(null)
   const submitMutation = useSubmitReport()
+  const { session, user: authUser } = useAuth()
   const isDemo = import.meta.env.VITE_DEMO_MODE === "true" || !import.meta.env.VITE_SUPABASE_URL
 
   const up = (p: Partial<typeof d>) => setD({ ...d, ...p })
@@ -144,7 +146,14 @@ export default function Lapor() {
   const submit = async () => {
     if (![0, 1, 2].every(validate)) return
 
+    if (!session || !authUser) {
+      toast("Anda harus masuk untuk mengirim laporan", "err")
+      nav("/auth")
+      return
+    }
+
     if (isDemo) {
+      // ... (no changes to demo logic)
       const r = actions.addReport({
         title: d.title.trim(),
         desc: d.desc.trim(),
@@ -163,6 +172,27 @@ export default function Lapor() {
       window.scrollTo(0, 0)
     } else {
       try {
+        // 1. Upload photos first
+        const uploadedPhotos: string[] = []
+        for (const base64 of d.photos) {
+          const fileName = `${authUser.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`
+          const base64Data = base64.split(',')[1]
+          const blob = await fetch(`data:image/jpeg;base64,${base64Data}`).then(r => r.blob())
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('report-photos')
+            .upload(fileName, blob)
+            
+          if (uploadError) throw uploadError
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from('report-photos')
+            .getPublicUrl(uploadData.path)
+            
+          uploadedPhotos.push(publicUrl)
+        }
+
+        // 2. Submit report
         const result = await submitMutation.mutateAsync({
           title: d.title.trim(),
           description: d.desc.trim(),
@@ -171,10 +201,21 @@ export default function Lapor() {
           rw: d.rw,
           lat: d.lat,
           lng: d.lng,
-          photos: d.photos,
           anonymous: d.anonymous,
-          reporter_id: user ? String(user.dusun) : undefined,
+          user_id: authUser.id,
         })
+
+        // 3. Add photos to report_photos table (optional, but requested in storage rule)
+        if (uploadedPhotos.length > 0) {
+          await supabase.from('report_photos').insert(
+            uploadedPhotos.map(url => ({
+              report_id: result.id,
+              url,
+              is_proof: false
+            }))
+          )
+        }
+
         const mockReport: Report = {
           ticket: result.ticket,
           title: result.title,
@@ -186,10 +227,10 @@ export default function Lapor() {
           createdAt: result.created_at,
           confirmations: 0,
           anonymous: result.anonymous,
-          reporter: user?.name || "Warga",
+          reporter: authUser?.email || "Warga",
           lat: result.lat,
           lng: result.lng,
-          photos: d.photos,
+          photos: uploadedPhotos.length > 0 ? uploadedPhotos : d.photos,
           updates: [{ status: "Diterima", note: "Laporan diterima.", at: result.created_at }],
           slaDays: 3,
         }
@@ -411,7 +452,7 @@ export default function Lapor() {
             <>
               <h2 className="text-xl">Di mana lokasinya?</h2>
               <MapView
-                height={260}
+                height={{ mobile: 240, desktop: 320 }}
                 drag={{
                   lat: d.lat,
                   lng: d.lng,

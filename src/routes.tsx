@@ -13,6 +13,7 @@ import Services from "./pages/Services"
 import Insight from "./pages/Insight"
 import { About, Faq, Privacy } from "./pages/Info"
 import { ErrorPage, NotFound } from "./pages/System"
+import AdminDashboard from "./pages/admin/AdminDashboard"
 import AdminReports from "./pages/admin/AdminReports"
 import AdminServices from "./pages/admin/AdminServices"
 import AdminProjects from "./pages/admin/AdminProjects"
@@ -82,7 +83,8 @@ export const router = createBrowserRouter([
         path: "admin",
         Component: AdminLayout,
         children: [
-          { index: true, Component: AdminReports },
+          { index: true, Component: AdminDashboard },
+          { path: "laporan", Component: AdminReports },
           { path: "layanan", Component: AdminServices },
           { path: "kegiatan", Component: AdminProjects },
           { path: "anggaran", Component: AdminBudget },

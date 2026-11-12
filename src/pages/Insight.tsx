@@ -21,10 +21,12 @@ import {
   ProgressBar,
   cx,
 } from "../components/ui"
-import { useApp } from "../lib/store"
 import { computeInsight } from "../lib/insight"
 import { CATEGORIES, DUSUN_SHORT, catLabel } from "../lib/mock"
 import { downloadCSV, rpShort } from "../lib/format"
+import { useReports, mapDbReport } from "../lib/api/laporan"
+import { useProjects, mapDbProject } from "../lib/api/kegiatan"
+import { useBudgets } from "../lib/api/anggaran"
 
 function Gauge({ score }: { score: number }) {
   const r = 80,
@@ -62,9 +64,16 @@ function Gauge({ score }: { score: number }) {
 }
 
 export default function Insight() {
-  const { reports, projects, budget } = useApp()
+  const { data: dbReports = [] } = useReports()
+  const { data: dbProjects = [] } = useProjects()
+  const { data: dbBudget = [] } = useBudgets()
+
+  const reports = useMemo(() => dbReports.map(mapDbReport), [dbReports])
+  const projects = useMemo(() => dbProjects.map(mapDbProject), [dbProjects])
+  const budget = useMemo(() => dbBudget, [dbBudget])
+
   const d = useMemo(
-    () => computeInsight(reports, projects, budget),
+    () => computeInsight(reports as any, projects as any, budget as any),
     [reports, projects, budget],
   )
   const max = Math.max(1, ...d.heat.flat())

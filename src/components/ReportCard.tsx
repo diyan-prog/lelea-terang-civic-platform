@@ -14,7 +14,7 @@ export function ReportCard({ r, row }: { r: Report; row?: boolean }) {
     >
       <Thumb
         category={r.category}
-        src={r.photos[0]}
+        src={r.photos?.[0]}
         className={
           row ? "h-36 w-full shrink-0 sm:h-auto sm:w-44" : "h-40 w-full"
         }

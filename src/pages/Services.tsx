@@ -505,7 +505,7 @@ function Inner() {
     role: authUser.user_metadata?.role || "warga",
   } : app.user
 
-  const { data: remoteRequests = [] } = useServiceRequests(user?.email)
+  const { data: remoteRequests = [] } = useServiceRequests(undefined, user?.email)
   const submitService = useSubmitService()
   const uploadAttachment = useUploadAttachment()
 
@@ -549,8 +549,14 @@ function Inner() {
   }
 
   const handleNext = () => {
-    if (step === 0 && !validateStep0()) return
-    if (step === 1 && !validateStep1()) return
+    if (step === 0 && !validateStep0()) {
+      toast("Mohon lengkapi semua data pemohon dengan benar", "err")
+      return
+    }
+    if (step === 1 && !validateStep1()) {
+      toast("Mohon lengkapi detail surat dengan benar", "err")
+      return
+    }
     if (step === 2) {
       const wajib = LAMPIRAN_TYPES.filter(l => l.required)
       const missing = wajib.filter(l => !attachments[l.id])
@@ -568,6 +574,7 @@ function Inner() {
 
     const allData = {
       type: detail.type,
+      user_id: authUser.id,
       email: user.email,
       name: pemohon.nama,
       purpose: detail.keperluan,

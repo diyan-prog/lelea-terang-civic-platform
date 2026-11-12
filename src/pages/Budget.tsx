@@ -8,7 +8,9 @@ import {
   IconCircle,
   PageHeader,
   Select,
+  cx,
 } from "../components/ui"
+import { thCls } from "./admin/AdminReports"
 import { toast } from "../lib/store"
 import { useBudgets } from "../lib/api/anggaran"
 import { pct, rp, downloadCSV } from "../lib/format"
@@ -132,7 +134,7 @@ export default function Budget() {
   }, [filtered, sort])
 
   const th = (k: typeof sort.k, l: string, right?: boolean) => (
-    <th className={`px-3 py-3 ${right ? "text-right" : "text-left"}`}>
+    <th className={cx(thCls, right ? "text-right" : "text-left")}>
       <button onClick={() => setSort({ k, asc: sort.k === k ? !sort.asc : false })} className="inline-flex items-center gap-1 font-bold">
         {l} <ArrowDownUp size={13} />
       </button>

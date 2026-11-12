@@ -15,6 +15,7 @@ import {
 import { svcName } from "../../components/ServiceList"
 import { toast } from "../../lib/store"
 import { useServiceRequests, useUpdateServiceStatus, useAttachmentUrl, type ServiceRequest, type ServiceAttachment } from "../../lib/api/layanan"
+import { useAuth } from "../../lib/auth"
 import { fmtDate } from "../../lib/format"
 import { AdminTitle, TableWrap, thCls } from "./AdminReports"
 
@@ -29,6 +30,7 @@ function AttachmentViewer({ att }: { att: ServiceAttachment }) {
 }
 
 export default function AdminServices() {
+  const { user } = useAuth()
   const { data: services = [], isLoading } = useServiceRequests()
   const updateStatus = useUpdateServiceStatus()
 
@@ -36,6 +38,12 @@ export default function AdminServices() {
   const [status, setStatus] = useState<string>("Diajukan")
   const [note, setNote] = useState("")
   const [err, setErr] = useState("")
+
+  const isAdmin = (user?.user_metadata as any)?.role === 'admin'
+
+  if (!isAdmin) {
+    return <div className="py-20 text-center">Akses ditolak. Hanya untuk Admin Desa.</div>
+  }
 
   const s = services.find((x) => x.ticket === sel)
 
@@ -56,8 +64,9 @@ export default function AdminServices() {
       await updateStatus.mutateAsync({ requestId: s!.id, status: st, note: n })
       toast(`${s!.ticket}: ${st}`)
       setSel(null)
-    } catch {
-      toast("Gagal memperbarui status", "err")
+    } catch (e: any) {
+      console.error(e)
+      toast(`Gagal: ${e.message || "Kesalahan tidak dikenal"}`, "err")
     }
   }
 
@@ -197,6 +206,19 @@ export default function AdminServices() {
                 {d.nominal_penghasilan && <p><b>Penghasilan:</b> Rp {Number(d.nominal_penghasilan).toLocaleString("id-ID")} dari {d.sumber_penghasilan}</p>}
                 {d.nama_almarhum && <p><b>Almarhum:</b> {d.nama_almarhum} (Tgl: {d.tgl_meninggal}, Hub: {d.hubungan})</p>}
                 {s.note && <p><b>Catatan Pemohon:</b> {s.note}</p>}
+              </div>
+
+              <div className="rounded-xl border border-line p-4 space-y-2">
+                <p className="font-bold text-navy text-base">Lampiran Berkas</p>
+                {(s as any).service_attachments && (s as any).service_attachments.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {(s as any).service_attachments.map((att: any) => (
+                      <AttachmentViewer key={att.id} att={att} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Tidak ada lampiran.</p>
+                )}
               </div>
 
               <Field label="Status">

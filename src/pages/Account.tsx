@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useNavigate } from "react-router"
 import { LogOut, PenSquare } from "lucide-react"
 import {
@@ -16,8 +16,11 @@ import {
 import { ReportCard } from "../components/ReportCard"
 import { ServiceList } from "../components/ServiceList"
 import { StrengthMeter } from "./Auth"
-import { actions, toast, useApp } from "../lib/store"
+import { toast, useApp } from "../lib/store"
+import { useServiceRequests } from "../lib/api/layanan"
+import { useMyReports, mapDbReport } from "../lib/api/laporan"
 import { useAuth } from "../lib/auth"
+import { supabase } from "../lib/supabase"
 import { DUSUN } from "../lib/mock"
 
 export default function Account() {
@@ -33,18 +36,14 @@ export default function Account() {
   const nav = useNavigate()
   const [tab, setTab] = useState("Laporan Saya")
   const [p, setP] = useState({
-    name: user!.name,
-    hp: user!.hp,
-    dusun: String(user!.dusun),
+    name: user?.name ?? "",
+    hp: user?.hp ?? "",
+    dusun: String(user?.dusun ?? "0"),
   })
   const [pw, setPw] = useState("")
-  const mine = reports.filter(
-    (r) =>
-      r.reporter === user!.name &&
-      r.photos.length >= 0 &&
-      r.reporter === user!.name,
-  )
-  const mySvc = services.filter((s) => s.email === user!.email)
+  const { data: dbReports = [] } = useMyReports(authUser?.id, authUser?.email)
+  const mine = useMemo(() => (dbReports || []).map(mapDbReport), [dbReports])
+  const { data: mySvc = [] } = useServiceRequests(authUser?.id, authUser?.email)
   return (
     <>
       <PageHeader title="Akun Saya" sub={`${user!.name} • ${user!.email}`} />
@@ -70,23 +69,41 @@ export default function Account() {
                 action={<LinkButton to="/lapor">Buat Laporan</LinkButton>}
               />
             ))}
-          {tab === "Layanan Saya" && <ServiceList list={mySvc} />}
+          {tab === "Layanan Saya" && <ServiceList list={mySvc as any} />}
           {tab === "Profil" && (
             <div className="grid max-w-3xl gap-6 md:grid-cols-2">
               <Card>
                 <h3 className="mb-4 text-lg">Data Diri</h3>
                 <form
                   className="space-y-4"
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault()
                     if (p.name.trim().length < 3)
                       return toast("Nama terlalu pendek", "err")
-                    actions.updateProfile({
-                      name: p.name.trim(),
-                      hp: p.hp,
-                      dusun: Number(p.dusun),
-                    })
-                    toast("Profil disimpan")
+                    try {
+                      const { error: authErr } = await supabase.auth.updateUser({
+                        data: {
+                          full_name: p.name.trim(),
+                          phone: p.hp,
+                          dusun_id: String(p.dusun),
+                        },
+                      })
+                      if (authErr) throw authErr
+
+                      const { error: profileErr } = await supabase
+                        .from("profiles")
+                        .upsert({
+                          id: authUser!.id,
+                          full_name: p.name.trim(),
+                          phone: p.hp,
+                          dusun_id: String(p.dusun),
+                        })
+                      if (profileErr) console.warn("profiles sync failed:", profileErr.message)
+
+                      toast("Profil disimpan")
+                    } catch (e: any) {
+                      toast("Gagal menyimpan: " + (e.message || "Unknown error"), "err")
+                    }
                   }}
                 >
                   <Field label="Nama lengkap">

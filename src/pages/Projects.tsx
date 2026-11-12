@@ -16,21 +16,25 @@ import {
   DataBadge,
 } from "../components/ui"
 import { ReportCard } from "../components/ReportCard"
-import { useApp } from "../lib/store"
+import { useProjects, useProject } from "../lib/api/kegiatan"
+import { useReports } from "../lib/api/laporan"
 import { BIDANG, DUSUN_SHORT, type Project } from "../lib/mock"
 import { fmtDate, pct, rp } from "../lib/format"
+import { mapDbReport } from "../lib/api/laporan"
+import { useMemo } from "react"
 
 const tone = (s: Project["status"]) =>
   s === "Selesai" ? "green" : s === "Berjalan" ? "teal" : "yellow"
 
 export function Projects() {
-  const { projects } = useApp()
+  const { data: dbProjects = [] } = useProjects()
+  const projects = useMemo(() => dbProjects, [dbProjects])
   const nav = useNavigate()
   const [f, setF] = useState({ dusun: "", status: "", bidang: "" })
-  const [hl, setHl] = useState<number | null>(null)
+  const [hl, setHl] = useState<string | null>(null)
   const list = projects.filter(
     (p) =>
-      (!f.dusun || p.dusun === +f.dusun) &&
+      (!f.dusun || String(p.dusun) === f.dusun) &&
       (!f.status || p.status === f.status) &&
       (!f.bidang || p.bidang === f.bidang),
   )
@@ -51,7 +55,7 @@ export function Projects() {
           >
             <option value="">Semua dusun</option>
             {DUSUN_SHORT.map((d, i) => (
-              <option key={d} value={i}>
+              <option key={d} value={String(i)}>
                 {d}
               </option>
             ))}
@@ -62,9 +66,9 @@ export function Projects() {
             onChange={(e) => setF({ ...f, status: e.target.value })}
           >
             <option value="">Semua status</option>
-            <option>Direncanakan</option>
-            <option>Berjalan</option>
             <option>Selesai</option>
+            <option>Berjalan</option>
+            <option>Direncanakan</option>
           </Select>
           <Select
             aria-label="Bidang"
@@ -100,8 +104,9 @@ export function Projects() {
               >
                 <Thumb
                   category={p.category}
+                  src={p.photos?.[0]}
                   className="h-36 w-full"
-                  label={`Foto contoh ${p.name}`}
+                  label={`Proyek ${p.name}`}
                 />
                 <div className="space-y-2 p-5">
                   <div className="flex items-center justify-between">
@@ -141,9 +146,18 @@ export function Projects() {
 
 export function ProjectDetail() {
   const { id } = useParams()
-  const { projects, reports } = useApp()
-  const p = projects.find((x) => x.id === Number(id))
+  const { data: p, isLoading } = useProject(id!)
+  const { data: dbReports = [] } = useReports()
   const nav = useNavigate()
+
+  // hooks harus di atas sebelum early return
+  const reports = useMemo(() => dbReports.map(mapDbReport), [dbReports])
+  const related = reports.filter((r) => r.projectId === p?.id)
+
+  if (isLoading) return (
+    <Container className="py-16 text-center">Memuat...</Container>
+  )
+
   if (!p)
     return (
       <Container className="py-16">
@@ -154,7 +168,7 @@ export function ProjectDetail() {
         />
       </Container>
     )
-  const related = reports.filter((r) => r.projectId === p.id)
+
   return (
     <Container className="py-8">
       <Link
@@ -172,34 +186,18 @@ export function ProjectDetail() {
             <p className="mt-2 text-lg">{p.desc}</p>
           </div>
           <Card>
-            <h2 className="mb-4 text-xl">Galeri Progres Foto</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {[0, 50, 100].map((m) => {
-                const ok = p.progress >= m
-                return (
-                  <div key={m} className="text-center">
-                    {ok ? (
-                      <Thumb
-                        category={p.category}
-                        className="h-28 w-full rounded-xl sm:h-36"
-                        label={`Foto progres ${m}%`}
-                      />
-                    ) : (
-                      <div className="flex h-28 w-full items-center justify-center rounded-xl bg-slate-100 text-slate-400 sm:h-36">
-                        <Lock />
-                      </div>
-                    )}
-                    <div className="mt-1.5 text-sm font-bold text-navy">
-                      {m}%
-                    </div>
-                    <div className="text-xs">
-                      {ok ? "Tersedia" : "Belum tercapai"}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
+            <h2 className="mb-4 text-xl">Dokumentasi Proyek</h2>
+            {p.photos && p.photos.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {p.photos.map((url: string, i: number) => (
+                  <img key={i} src={url} alt="Proyek" className="h-40 w-full rounded-xl object-cover" />
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-500">Belum ada foto.</p>
+            )}
           </Card>
+
           {related.length > 0 && (
             <div>
               <h2 className="mb-3 text-xl">Laporan warga terkait</h2>
@@ -236,11 +234,11 @@ export function ProjectDetail() {
               </li>
               <li className="flex gap-2">
                 <HardHat size={18} className="text-teal" />
-                Bidang {p.bidang}
+                {p.bidang}
               </li>
               <li className="flex gap-2">
                 <Calendar size={18} className="text-teal" />
-                Mulai {fmtDate(p.date)}
+                Mulai {p.date ? fmtDate(p.date) : '-'}
               </li>
             </ul>
             <Button

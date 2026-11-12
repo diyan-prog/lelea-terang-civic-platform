@@ -36,7 +36,10 @@ import {
   cx,
 } from "../components/ui"
 import { ReportCard } from "../components/ReportCard"
-import { actions, toast, useApp } from "../lib/store"
+import { useReports, useTrackReport, useRateReport, mapDbReport } from "../lib/api/laporan"
+import { useAuth } from "../lib/auth"
+import { useApp } from "../lib/store"
+
 import {
   CATEGORIES,
   DUSUN_SHORT,
@@ -57,7 +60,6 @@ const STATUSES: RStatus[] = [
 ]
 
 export function ReportList() {
-  const { reports } = useApp()
   const [q, setQ] = useState("")
   const [st, setSt] = useState("")
   const [cat, setCat] = useState("")
@@ -66,6 +68,9 @@ export function ReportList() {
   const [mism, setMism] = useState(false)
   const [view, setView] = useState<"list" | "map">("list")
   const [page, setPage] = useState(1)
+  const { data: dbReports = [], isLoading } = useReports()
+  const reports = useMemo(() => (dbReports || []).map(mapDbReport), [dbReports])
+
   const list = useMemo(
     () =>
       reports.filter(
@@ -79,6 +84,12 @@ export function ReportList() {
           (!mism || r.mismatch),
       ),
     [reports, q, st, cat, dus, late, mism],
+  )
+
+  if (isLoading) return (
+    <Container className="py-16 text-center">
+      <span className="text-slate-400">Memuat laporan...</span>
+    </Container>
   )
   const pages = Math.max(1, Math.ceil(list.length / PER))
   const cur = Math.min(page, pages)
@@ -242,12 +253,21 @@ export function ReportList() {
           </>
         ) : (
           <>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {list.slice((cur - 1) * PER, cur * PER).map((r) => (
-                <ReportCard key={r.ticket} r={r} />
-              ))}
-            </div>
-            {pages > 1 && (
+            {list.length === 0 ? (
+              <EmptyState
+                icon={SearchX}
+                title="Belum ada laporan"
+                text={reports.length === 0 ? "Jadilah yang pertama melaporkan masalah di lingkungan desa." : "Tidak ada laporan yang sesuai dengan filter."}
+                action={reports.length === 0 ? <LinkButton to="/lapor">Buat Laporan</LinkButton> : undefined}
+              />
+            ) : (
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                {list.slice((cur - 1) * PER, cur * PER).map((r) => (
+                  <ReportCard key={r.ticket} r={r} />
+                ))}
+              </div>
+            )}
+            {list.length > 0 && pages > 1 && (
               <nav
                 aria-label="Halaman"
                 className="flex items-center justify-center gap-2 pt-4"
@@ -292,10 +312,15 @@ export function ReportList() {
 
 export function ReportDetail() {
   const { ticket } = useParams()
-  const { reports, projects } = useApp()
-  const r = reports.find((x) => x.ticket === ticket)
+  const { data: dbReport, isLoading } = useTrackReport(ticket!)
+  const r = useMemo(() => dbReport ? mapDbReport(dbReport) : null, [dbReport])
+  const { projects = [] } = useApp()
+  const rateMutation = useRateReport()
+  const { user } = useAuth()
   const [rate, setRate] = useState(0)
   const [comment, setComment] = useState("")
+
+  if (isLoading) return <Container className="py-16 text-center">Memuat...</Container>
   if (!r)
     return (
       <Container className="py-16">
@@ -344,12 +369,12 @@ export function ReportDetail() {
               <span>
                 {r.anonymous
                   ? "Pelapor: Anonim"
-                  : `Pelapor: warga ${r.reporter.split(" ")[0]}`}
+                  : `Pelapor: warga ${r.reporter?.split(" ")[0] || "Warga"}`}
               </span>
             </p>
           </div>
           <div
-            className={cx("grid gap-3", photos.length > 1 ? "grid-cols-3" : "")}
+            className={cx("grid gap-3", photos.length > 1 ? "grid-cols-2 sm:grid-cols-3" : "")}
           >
             {photos.map((p, i) => (
               <Thumb
@@ -358,7 +383,7 @@ export function ReportDetail() {
                 src={p}
                 className={cx(
                   "w-full rounded-card",
-                  photos.length > 1 ? "h-32" : "h-64",
+                  photos.length > 1 ? "h-32 sm:h-40" : "h-64 sm:h-80",
                 )}
               />
             ))}
@@ -469,7 +494,8 @@ export function ReportDetail() {
           </Card>
           {r.lat && r.lng ? (
             <MapView
-              height={220}
+              height={{ mobile: 200, desktop: 280 }}
+              className="mt-4"
               pins={[
                 {
                   id: r.ticket,
@@ -495,14 +521,19 @@ export function ReportDetail() {
 }
 
 export function Track() {
-  const { reports } = useApp()
   const [sp] = useSearchParams()
   const [code, setCode] = useState(sp.get("t") ?? "")
-  const [q, setQ] = useState(sp.get("t") ?? "")
+  const [searchCode, setSearchCode] = useState(sp.get("t") ?? "")
   const [err, setErr] = useState("")
-  const r = q
-    ? reports.find((x) => x.ticket.toLowerCase() === q.trim().toLowerCase())
-    : undefined
+  const { data: dbReport, isLoading } = useTrackReport(searchCode)
+  const r = dbReport ? mapDbReport(dbReport) : null
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!code.trim()) return setErr("Masukkan kode tiket terlebih dahulu")
+    setErr("")
+    setSearchCode(code.trim().toUpperCase())
+  }
   return (
     <>
       <PageHeader
@@ -512,13 +543,7 @@ export function Track() {
       <Container className="max-w-xl py-8">
         <Card>
           <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              if (!code.trim())
-                return setErr("Masukkan kode tiket terlebih dahulu")
-              setErr("")
-              setQ(code.trim())
-            }}
+            onSubmit={handleSubmit}
             className="space-y-3"
           >
             <Field label="Masukkan kode tiket" error={err}>
@@ -535,12 +560,12 @@ export function Track() {
             </Button>
           </form>
         </Card>
-        {q && !r && (
+        {!isLoading && searchCode && !r && (
           <div className="mt-6">
             <EmptyState
               icon={SearchX}
               title="Tiket tidak ditemukan"
-              text={`Kode ${q} tidak ada. Periksa kembali huruf dan angkanya, contoh: LT-202610-0012.`}
+              text={`Kode ${searchCode} tidak ada. Periksa kembali huruf dan angkanya.`}
             />
           </div>
         )}

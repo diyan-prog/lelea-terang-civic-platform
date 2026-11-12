@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Quote,
 } from "lucide-react"
+import { Squiggle } from "../components/Squiggle"
 import { VillageIllustration } from "../components/Brand"
 import {
   Card,
@@ -28,7 +29,7 @@ import {
   StatusBadge,
   Thumb,
 } from "../components/ui"
-import { useReports } from "../lib/api/laporan"
+import { useReports, mapDbReport } from "../lib/api/laporan"
 import { useProjects } from "../lib/api/kegiatan"
 import { useBudgets } from "../lib/api/anggaran"
 import { useStats } from "../lib/api/statistik"
@@ -83,29 +84,33 @@ const steps = [
     d: "Lihat pola masalah untuk keputusan desa.",
   },
 ]
-const testi = [
-  {
-    n: "Ibu Sari",
-    r: "Warga Dazai 2",
-    q: "Laporan lampu jalan saya langsung ada kode tiketnya. Seminggu kemudian sudah diperbaiki, saya bisa lihat fotonya.",
-  },
-  {
-    n: "Pak Darma",
-    r: "Petani, Dazun 4",
-    q: "Sekarang saya tahu berapa dana untuk saluran irigasi. Kalau ada yang janggal, tinggal dilaporkan.",
-  },
-  {
-    n: "Mas Rizki",
-    r: "Pemuda Karang Taruna",
-    q: "Grafiknya mudah dibaca. Kami pakai datanya untuk usulan di musyawarah desa.",
-  },
-]
+const testi: any[] = []
 
 export default function Home() {
-  const { data: reports = [] } = useReports()
+  const { data: dbReports = [] } = useReports()
+  const reports = dbReports.map(mapDbReport)
   const { data: projects = [] } = useProjects()
   const { data: budget = [] } = useBudgets()
   const { data: ins } = useStats()
+
+  // Suara Warga: laporan selesai yang punya deskripsi — selalu 3 kartu
+  const PLACEHOLDER = [
+    { n: "Warga", r: "Dusun Ilir", q: "Laporan warga menunggu...", stars: 5 },
+    { n: "Warga", r: "Dusun Weluntas", q: "Laporan warga menunggu...", stars: 5 },
+    { n: "Warga", r: "Dusun 3", q: "Laporan warga menunggu...", stars: 5 },
+  ]
+  const suaraWarga = [
+    ...reports
+      .filter((r: any) => r.status === "Selesai" && r.desc)
+      .slice(0, 3)
+      .map((r: any) => ({
+        n: r.reporter || "Warga",
+        r: "Dusun " + DUSUN_SHORT[r.dusun] || "1",
+        q: r.desc,
+        stars: r.rating || 5,
+      })),
+    ...PLACEHOLDER,
+  ].slice(0, 3)
   
   // ins now contains serap, selesaiTotal, and score
   const serap = ins?.serap ?? 0
@@ -116,15 +121,11 @@ export default function Home() {
   return (
     <>
       <section className="relative overflow-hidden bg-gradient-to-b from-pale via-pale/50 to-white pb-28 pt-10 lg:pb-32 lg:pt-16">
-        <div className="absolute inset-0 bg-[url('/home.jpeg')] bg-cover bg-center opacity-40 pointer-events-none" />
         <Container className="relative z-10 grid items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:-mt-12">
           <div className="fade-up">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 text-sm font-bold text-teal shadow-soft">
-              <span className="h-2 w-2 rounded-full bg-sun" />
-              Transparansi Desa • Akuntabel • Terbuka
-            </span>
+
             <h1 className="mt-5 text-[36px] leading-[1.1] sm:text-[48px] lg:text-[54px]">
-              Transparansi &amp; Partisipasi Desa di Ujung Jari Anda
+              Transparansi &amp; Partisipasi Desa <br/> <Squiggle color="#F2B33D">di Ujung Jari Anda</Squiggle>
             </h1>
             <p className="mt-5 max-w-xl text-lg">
               Pantau penggunaan dana desa, layanan publik, dan pembangunan Desa
@@ -184,7 +185,7 @@ export default function Home() {
           sub="Empat cara untuk ikut mengawasi dan membangun desa."
         />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {services.map((s) => (
+          {(services || []).map((s) => (
             <Card
               key={s.title}
               className="group flex flex-col transition hover:-translate-y-1"
@@ -205,7 +206,6 @@ export default function Home() {
       </Section>
 
       <Section pale className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/tradisi.jpg')] bg-cover bg-center opacity-50 pointer-events-none" />
         <div className="relative z-10">
           <SectionHead
             title="Laporan Terbaru"
@@ -221,7 +221,7 @@ export default function Home() {
             }
           />
           <div className="grid gap-5 md:grid-cols-3">
-            {reports.slice(0, 3).map((r) => (
+            {(reports || []).slice(0, 3).map((r) => (
               <Link
                 key={r.ticket}
                 to={`/laporan/${r.ticket}`}
@@ -229,7 +229,7 @@ export default function Home() {
               >
                 <Thumb
                   category={r.category}
-                  src={r.photos[0]}
+                  src={r.photos?.[0]}
                   className="h-40 w-full"
                 />
                 <div className="p-5">
@@ -278,29 +278,22 @@ export default function Home() {
       </Section>
 
       <Section pale>
-        <SectionHead
-          title="Suara Warga"
-          action={
-            <span className="rounded-full bg-sun/20 px-3 py-1 text-xs font-bold text-[#8a6410]">
-              Contoh testimoni
-            </span>
-          }
-        />
+        <SectionHead title="Suara Warga" />
         <div className="grid gap-5 md:grid-cols-3">
-          {testi.map((t) => (
-            <Card key={t.n}>
+          {suaraWarga.slice(0, 3).map((t: any, idx: number) => (
+            <Card key={idx}>
               <Quote className="text-teal/40" />
               <p className="mt-2 text-[15px] text-[#334155]">{t.q}</p>
               <div className="mt-4 flex items-center gap-3">
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-pale font-extrabold text-teal">
-                  {t.n.split(" ")[1][0]}
+                  {t.n[0].toUpperCase()}
                 </span>
                 <div>
                   <div className="font-bold text-navy">{t.n}</div>
                   <div className="text-xs">{t.r}</div>
                 </div>
                 <div className="ml-auto flex">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(t.stars)].map((_, i) => (
                     <Star key={i} size={14} className="fill-sun text-sun" />
                   ))}
                 </div>

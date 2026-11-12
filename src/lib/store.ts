@@ -191,4 +191,17 @@ export const actions = {
       users: state.users.map((u) => (u.email === email ? { ...u, role } : u)),
     })
   },
+  addUser(u: User) {
+    set({ users: [...state.users, { ...u, email: u.email.toLowerCase() }] })
+  },
+  updateUser(email: string, d: User) {
+    set({
+      users: state.users.map((u) => (u.email === email ? { ...u, ...d, email: d.email.toLowerCase() } : u)),
+    })
+  },
+  deleteUser(email: string) {
+    set({
+      users: state.users.filter((u) => u.email !== email),
+    })
+  },
 }

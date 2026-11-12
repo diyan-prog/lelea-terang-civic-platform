@@ -16,6 +16,12 @@
   --color-line: #e2e8f0;
   --radius-card: 16px;
   --shadow-soft: 0 4px 24px -6px rgba(11, 79, 92, 0.12);
+  
+  /* Admin theme (Blue palette) */
+  --color-admin-bg: #2563C9;
+  --color-admin-sidebar: #1E56B8;
+  --color-admin-sidebar-active: rgba(255,255,255,0.16);
+  --color-admin-card-selected: #2563C9;
 }
 
 @layer base {

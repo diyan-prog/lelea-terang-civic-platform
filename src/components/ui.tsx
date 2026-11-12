@@ -175,11 +175,7 @@ export const PageHeader = ({
     </Container>
   </div>
 )
-export const DataBadge = () => (
-  <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-bold text-green-800 border border-green-200">
-    Data Real — PERBUP No.223/2024
-  </span>
-)
+export const DataBadge = () => null
 
 export const IconCircle = ({
   icon: I,
@@ -429,13 +425,14 @@ export function Timeline({ items }: { items: TLItem[] }) {
 }
 export function reportTimeline(r: Report): TLItem[] {
   const steps = ["Diterima", "Diverifikasi", "Diproses", "Selesai"]
+  const updates = r.updates || [];
   const items: TLItem[] = steps.map((s) => {
-    const u = [...r.updates].reverse().find((x) => x.status === s)
+    const u = [...updates].reverse().find((x) => x.status === s)
     const doneIdx = steps.indexOf(r.status)
     const done = r.status === "Ditolak" ? !!u : steps.indexOf(s) <= doneIdx
     return { title: s, done, at: u?.at, note: u?.note, photo: u?.photo }
   })
-  const rej = r.updates.find((x) => x.status === "Ditolak")
+  const rej = updates.find((x) => x.status === "Ditolak")
   if (rej)
     items.push({ title: "Ditolak", done: true, at: rej.at, note: rej.note })
   return items.filter((i) => !(r.status === "Ditolak" && i.title === "Selesai"))
@@ -507,7 +504,7 @@ export function ToastHost() {
 
 /* ---------- Form pieces ---------- */
 export const inputCls =
-  "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-[15px] text-navy placeholder:text-slate-400 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
+  "min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-[16px] text-navy placeholder:text-slate-400 focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
 export const Field = ({
   label,
   hint,
@@ -735,7 +732,7 @@ export const ConfirmDelete = ({ onClick }: { onClick: () => void }) => (
 )
 
 /* ---------- Category icon + thumbnail ---------- */
-const CAT_ICON: Record<CatId, LucideIcon> = {
+const CAT_ICON: Record<string, LucideIcon> = {
   jalan: Construction,
   irigasi: Waves,
   sampah: Trash2,
@@ -748,17 +745,17 @@ export const CatIcon = ({
   size = 48,
   tone,
 }: {
-  id: CatId
+  id: string
   size?: number
   tone?: "teal" | "yellow" | "blue" | "red" | "green"
 }) => (
   <IconCircle
-    icon={CAT_ICON[id]}
+    icon={CAT_ICON[id] || FileText}
     size={size}
     tone={tone ?? (id === "dugaan" ? "red" : "teal")}
   />
 )
-const THUMB_BG: Record<CatId, string> = {
+const THUMB_BG: Record<string, string> = {
   jalan: "from-slate-300 to-slate-100",
   irigasi: "from-sky-200 to-teal-100",
   sampah: "from-amber-200 to-lime-100",
@@ -772,12 +769,12 @@ export function Thumb({
   className,
   label,
 }: {
-  category: CatId
+  category: string
   src?: string
   className?: string
   label?: string
 }) {
-  const I = CAT_ICON[category]
+  const I = CAT_ICON[category] || FileText
   if (src)
     return (
       <img
@@ -792,7 +789,7 @@ export function Thumb({
       aria-label={label ?? `Foto contoh ${category}`}
       className={cx(
         "relative flex items-center justify-center bg-gradient-to-br",
-        THUMB_BG[category],
+        THUMB_BG[category] || "from-slate-200 to-slate-100",
         className,
       )}
     >
@@ -834,12 +831,13 @@ L.Marker.prototype.options.icon = L.icon({
 function FitBounds({ pins }: { pins: Pin[] }) {
   const map = useMap()
   useEffect(() => {
-    if (!pins.length) return
-    if (pins.length === 1) {
-      map.setView([pins[0].lat, pins[0].lng], 15, { animate: true })
+    const validPins = pins.filter(p => typeof p.lat === 'number' && typeof p.lng === 'number');
+    if (!validPins.length) return
+    if (validPins.length === 1) {
+      map.setView([validPins[0].lat, validPins[0].lng], 15, { animate: true })
       return
     }
-    const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lng]))
+    const bounds = L.latLngBounds(validPins.map((p) => [p.lat, p.lng]))
     map.fitBounds(bounds, { padding: [40, 40], animate: true, maxZoom: 16 })
   }, [pins, map])
   return null
@@ -870,14 +868,21 @@ export function LeafletMap({
   className,
 }: {
   pins?: Pin[]
-  height?: number
+  height?: number | { mobile: number; desktop: number }
   drag?: { lat: number; lng: number; onChange: (lat: number, lng: number) => void }
   className?: string
 }) {
   const center: [number, number] = [CENTER.lat, CENTER.lng]
 
   return (
-    <div className={cx("relative overflow-hidden rounded-card border border-line", className)} style={{ height }}>
+    <div 
+      className={cx(
+        "relative overflow-hidden rounded-card border border-line",
+        typeof height !== 'number' ? "h-[300px] md:h-[400px]" : "",
+        className,
+      )}
+      style={typeof height === 'number' ? { height } : undefined}
+    >
       <MapContainer
         center={center}
         zoom={14}
@@ -889,7 +894,7 @@ export function LeafletMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <MarkerClusterGroup chunkedLoading>
-          {pins.map((p) => (
+          {pins.filter(p => typeof p.lat === 'number' && typeof p.lng === 'number').map((p) => (
             <Marker
               key={p.id}
               position={[p.lat, p.lng]}

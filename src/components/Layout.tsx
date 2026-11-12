@@ -4,6 +4,7 @@ import {
   Building2,
   ChevronDown,
   ClipboardList,
+  Clock,
   FileText,
   Home,
   Landmark,
@@ -23,9 +24,16 @@ import {
   Mail,
   Phone,
   ShieldAlert,
+  MessageSquareWarning,
+  Wallet,
+  HelpCircle,
+  Bell,
+  ArrowUpRight,
+  CheckCircle2,
+  Plus,
 } from "lucide-react"
 import { Logo } from "./Brand"
-import { Button, Card, Container, IconCircle, ToastHost, cx } from "./ui"
+import { Button, Card, Container, IconCircle, SlideOver, ToastHost, cx } from "./ui"
 import { actions, useApp } from "../lib/store"
 import { useAuth } from "../lib/auth"
 import type { Role } from "../lib/mock"
@@ -59,7 +67,7 @@ function Navbar() {
   const dataActive = ["/anggaran", "/pembangunan", "/statistik"].some((p) =>
     loc.pathname.startsWith(p),
   )
-  const staff = user && user.role !== "warga"
+  const staff = user && user.role === "admin"
   return (
     <nav
       className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur"
@@ -121,10 +129,10 @@ function Navbar() {
                 className="flex min-h-11 items-center gap-2 rounded-full border border-line py-1 pl-1 pr-3 hover:bg-pale"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-teal font-bold text-white">
-                  {user.name[0]}
+                  {(user?.name ?? "W").charAt(0).toUpperCase()}
                 </span>
                 <span className="text-sm font-bold text-navy">
-                  {user.name.split(" ")[0]}
+                  {user?.name?.split(" ")[0] ?? "Warga"}
                 </span>
                 <ChevronDown size={16} />
               </button>
@@ -286,10 +294,6 @@ function Footer() {
             Desa Terbuka, Warga Terlibat. Platform transparansi dan partisipasi
             warga Desa Lelea, Kabupaten Indramayu, Jawa Barat.
           </p>
-          <p className="mt-3 text-xs text-white/60">
-            Lelea Terang adalah prototipe dengan data contoh dan bukan situs
-            resmi pemerintah.
-          </p>
         </div>
         {col("Produk", [
           ["/anggaran", "Uang Desa Kita"],
@@ -310,8 +314,7 @@ function Footer() {
         ])}
       </Container>
       <div className="border-t border-white/10 py-4 text-center text-xs text-white/70">
-        © 2026 Lelea Terang — Desa Lelea, Indramayu. Seluruh data bersifat
-        contoh.
+        © 2026 Lelea Terang — Desa Lelea, Indramayu. 
       </div>
     </footer>
   )
@@ -451,162 +454,226 @@ export function RequireRole({
   return <>{children}</>
 }
 
+export function TableWrap({ children }: { children: ReactNode }) {
+  return (
+    <div className="overflow-x-auto rounded-xl border border-line bg-white shadow-sm">
+      {children}
+    </div>
+  )
+}
+
+const thCls = "px-4 py-3 text-left font-bold text-navy bg-pale/50"
+
 export function AdminLayout() {
   const { user: authUser, logout } = useAuth()
   const app = useApp()
   const navigate = useNavigate()
-  const [menuOpen, setMenuOpen] = useState(false)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [addMenuOpen, setAddMenuOpen] = useState(false)
   const user = authUser ? {
     name: authUser.user_metadata?.full_name || authUser.email?.split("@")[0] || "Warga",
     email: authUser.email || "",
     role: authUser.user_metadata?.role || "warga",
   } : app.user
-  const items = [
-    { to: "/admin", end: true, icon: ClipboardList, label: "Antrean Laporan" },
-    { to: "/admin/layanan", icon: FileText, label: "Layanan Surat" },
-    { to: "/admin/kegiatan", icon: HardHat, label: "Kegiatan" },
-    { to: "/admin/anggaran", icon: Landmark, label: "Anggaran" },
-    { to: "/admin/statistik", icon: PieChart, label: "Statistik" },
-    ...(user?.role === "admin"
-      ? [{ to: "/admin/pengguna", icon: Users, label: "Pengguna" }]
-      : []),
-  ]
 
   const handleLogout = async () => {
     await logout()
     navigate("/")
   }
 
+  const sidebarItems = [
+    { to: "/admin", end: true, icon: LayoutDashboard, label: "Dashboard" },
+    { to: "/admin/laporan", icon: MessageSquareWarning, label: "Laporan" },
+    { to: "/admin/layanan", icon: FileText, label: "Layanan" },
+    { to: "/admin/kegiatan", icon: HardHat, label: "Kegiatan" },
+    { to: "/admin/anggaran", icon: Wallet, label: "Anggaran" },
+    { to: "/admin/statistik", icon: BarChart3, label: "Statistik" },
+    { to: "/admin/pengguna", icon: Users, label: "Pengguna" },
+  ]
+
   return (
-    <RequireRole roles={["perangkat", "admin"]}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-sm">
-        <div className="flex h-16 items-center justify-between px-4 lg:px-6">
-          {/* Logo & Nama */}
-          <div className="flex items-center gap-3">
-            <img
-              src="/Indramayu.png"
-              alt="Logo Indramayu"
-              className="h-10 w-10 shrink-0 rounded object-contain"
-            />
-            <div className="flex flex-col">
-              <span className="text-lg font-extrabold leading-[1.1] tracking-wide text-navy">LELEA</span>
-              <span className="text-lg font-extrabold leading-[1.1] tracking-wide text-teal">TERANG</span>
+    <RequireRole roles={["admin"]}>
+      <div className="flex min-h-screen">
+        <div className="flex w-full flex-col lg:flex-row">
+          <aside className="no-print hidden w-[260px] shrink-0 flex-col bg-[#0B6B6D] lg:flex">
+            <div className="flex h-full flex-col p-5">
+              <div className="mb-6 px-2">
+                <Logo light />
+              </div>
+              <div className="relative mb-6">
+                <button
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-[14px] font-bold text-teal transition hover:bg-white/90"
+                  onClick={() => setAddMenuOpen(!addMenuOpen)}
+                >
+                  <Plus size={16} />
+                  Tambah Data
+                </button>
+                {addMenuOpen && (
+                  <div className="fade-up absolute left-0 right-0 top-full z-50 mt-2 rounded-xl bg-white p-2 shadow-lg">
+                    {[
+                      { label: "Kegiatan Baru", to: "/admin/kegiatan" },
+                      { label: "Anggaran Baru", to: "/admin/anggaran" },
+                    ].map((m) => (
+                      <button
+                        key={m.to}
+                        onClick={() => { navigate(m.to); setAddMenuOpen(false) }}
+                        className="block w-full rounded-lg px-3 py-2 text-left text-sm text-[#17364A] hover:bg-[#EEF3F6]"
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <nav className="flex-1 space-y-1">
+                {sidebarItems.map(({ to, icon: I, label, end }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    end={end}
+                    className={({ isActive }) =>
+                      cx(
+                        "flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium text-white transition hover:bg-white/10",
+                        isActive && "bg-white/15 font-bold"
+                      )
+                    }
+                  >
+                    <I size={18} />
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
+
+              <div className="mt-auto pt-6">
+                <div className="mb-4 space-y-4">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/60">
+                    RINGKASAN ANGGARAN
+                  </div>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[12px] text-white/80">
+                        <span>Realisasi</span>
+                        <span>60%</span>
+                      </div>
+                      <div className="h-1 w-full rounded-full bg-white/20">
+                        <div className="h-full w-[60%] rounded-full bg-white" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[12px] text-white/80">
+                        <span>Laporan</span>
+                        <span>85%</span>
+                      </div>
+                      <div className="h-1 w-full rounded-full bg-white/20">
+                        <div className="h-full w-[85%] rounded-full bg-white" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <a
+                  href="/"
+                  className="flex items-center gap-2 text-[14px] font-medium text-white/90 hover:text-white"
+                >
+                  Lihat Situs Publik
+                  <ArrowUpRight size={16} />
+                </a>
+              </div>
             </div>
-          </div>
+          </aside>
 
-          {/* Right side: Profile & Logout */}
-          <div className="flex items-center gap-3">
-            {/* Role badge */}
-            <span className="hidden rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal sm:block">
-              {user?.role === "admin" ? "Administrator" : "Perangkat Desa"}
-            </span>
-
-            {/* Profile dropdown */}
-            <div className="relative">
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <header className="flex h-[72px] shrink-0 items-center justify-between border-b border-[#E1EAED] bg-white px-6">
               <button
-                onClick={() => setProfileOpen(!profileOpen)}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-deep text-white transition hover:opacity-90"
-                aria-label="Profil"
+                onClick={() => setDrawerOpen(true)}
+                className="mr-4 rounded-lg p-2 hover:bg-[#EEF3F6] lg:hidden"
               >
-                <span className="text-sm font-bold">
-                  {(user?.name || "W")[0].toUpperCase()}
-                </span>
+                <Menu size={24} className="text-[#17364A]" />
               </button>
 
-              {/* Dropdown */}
-              {profileOpen && (
-                <div className="absolute right-0 top-12 z-50 w-56 rounded-xl bg-white py-2 shadow-lg ring-1 ring-black/5">
-                  <div className="border-b border-slate-100 px-4 pb-2">
-                    <p className="font-semibold text-slate-800">{user?.name}</p>
-                    <p className="text-xs text-slate-500">{user?.email}</p>
-                  </div>
+              <div className="ml-auto flex items-center gap-3">
+                <div className="relative">
                   <button
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50"
+                    onClick={() => setProfileOpen(!profileOpen)}
+                    className="flex items-center gap-3 rounded-full py-1.5 pl-1.5 pr-3 transition hover:bg-[#EEF3F6]"
                   >
-                    <LogOut size={16} />
-                    Keluar
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal font-bold text-white">
+                      {(user?.name || "W")[0].toUpperCase()}
+                    </div>
+                    <span className="hidden text-[14px] font-bold text-[#17364A] lg:block">
+                      {user?.name?.split(" ")[0] || "Warga"}
+                    </span>
                   </button>
+                  {profileOpen && (
+                    <div className="fade-up absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-[#E1EAED] bg-white py-2 shadow-lg">
+                      <div className="px-4 py-2">
+                        <p className="text-[14px] font-bold text-[#17364A]">{user?.name}</p>
+                        <p className="text-[12px] text-[#6B7F89]">{user?.email}</p>
+                      </div>
+                      <div className="my-1 border-t border-[#E1EAED]" />
+                      <button
+                        onClick={handleLogout}
+                        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-[14px] font-medium text-[#D64545] hover:bg-[#FBE0DD]"
+                      >
+                        <LogOut size={16} />
+                        Keluar
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            </header>
 
-            {/* Mobile menu toggle */}
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg lg:hidden"
-              aria-label="Menu"
-            >
-              <Menu size={24} />
-            </button>
+            <main className="flex-1 overflow-y-auto p-8 bg-white">
+              <Outlet />
+            </main>
           </div>
         </div>
+      </div>
 
-        {/* Mobile sidebar */}
-        {menuOpen && (
-          <aside className="bg-teal-deep p-4 text-white lg:hidden">
-            <nav className="flex flex-col gap-1">
-              {items.map(({ to, icon: I, label, end }) => (
+      {/* Mobile Drawer */}
+      {drawerOpen && (
+        <div className="fixed inset-0 z-[100] lg:hidden">
+          <div className="absolute inset-0 bg-[#17364A]/60" onClick={() => setDrawerOpen(false)} />
+          <aside className="slide-in absolute bottom-0 left-0 top-0 w-[280px] bg-[#0B6B6D] p-5 shadow-xl">
+            <div className="mb-8 flex items-center justify-between">
+              <Logo light />
+              <button onClick={() => setDrawerOpen(false)} className="rounded-lg p-2 text-white/80">
+                <X size={24} />
+              </button>
+            </div>
+            <nav className="space-y-1">
+              {sidebarItems.map(({ to, icon: I, label, end }) => (
                 <NavLink
                   key={to}
                   to={to}
                   end={end}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => setDrawerOpen(false)}
                   className={({ isActive }) =>
                     cx(
-                      "flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-semibold transition",
-                      isActive
-                        ? "bg-white text-teal-deep"
-                        : "text-white/85 hover:bg-white/10",
+                      "flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium text-white transition",
+                      isActive && "bg-white/15 font-bold"
                     )
                   }
                 >
-                  <I size={19} />
+                  <I size={18} />
                   {label}
                 </NavLink>
               ))}
             </nav>
-          </aside>
-        )}
-      </header>
-
-      {/* Main content with sidebar (desktop) */}
-      <div className="flex min-h-[calc(100vh-64px)] flex-col lg:flex-row">
-        <aside className="no-print hidden bg-teal-deep p-5 text-white lg:block lg:w-64 lg:shrink-0">
-          <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sun">
-            <Building2 size={16} />
-            Dasbor Petugas
-          </div>
-          <nav
-            className="no-scrollbar flex flex-col gap-1"
-            aria-label="Menu petugas"
-          >
-            {items.map(({ to, icon: I, label, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  cx(
-                    "flex min-h-11 items-center gap-3 rounded-xl px-3.5 text-[15px] font-semibold transition",
-                    isActive
-                      ? "bg-white text-teal-deep"
-                      : "text-white/85 hover:bg-white/10",
-                  )
-                }
+            <div className="mt-auto pt-8">
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium text-white/80"
               >
-                <I size={19} />
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-        </aside>
-        <div className="min-w-0 flex-1 bg-slate-50 p-4 sm:p-8">
-          <Outlet />
+                <LogOut size={18} />
+                Keluar
+              </button>
+            </div>
+          </aside>
         </div>
-      </div>
+      )}
     </RequireRole>
   )
 }
@@ -618,15 +685,15 @@ export const ContactCard = () => (
       <ul className="mt-3 space-y-3 text-sm">
         <li className="flex gap-3">
           <Building2 size={18} className="mt-0.5 text-teal" />
-          Jl. Raya Lelea No. 1 (alamat contoh), Kec. Lelea, Kab. Indramayu
+          Jl. Raya Lelea, Kec. Lelea, Kab. Indramayu, Jawa Barat 45261
         </li>
         <li className="flex gap-3">
-          <BarChart3 size={18} className="mt-0.5 text-teal" />
+          <Clock size={18} className="mt-0.5 text-teal" />
           Senin–Jumat, 08.00–15.00 WIB
         </li>
         <li className="flex gap-3">
           <Mail size={18} className="mt-0.5 text-teal" />
-          halo@leleaterang.example
+          pemdeslelea@gmail.com
         </li>
       </ul>
       <a

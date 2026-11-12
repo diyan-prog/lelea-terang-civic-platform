@@ -1,123 +1,619 @@
-export interface Database {
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
   public: {
     Tables: {
-      dusun: {
-        Row: { id: number; nama: string; jumlah_rw: number }
-        Insert: { id?: number; nama: string; jumlah_rw?: number }
-        Update: { id?: number; nama?: string; jumlah_rw?: number }
-      }
       apbdes_budgets: {
-        Row: { id: string; year: number; category: string; title: string; allocated: number; realized: number; description: string | null }
-        Insert: { id?: string; year: number; category: string; title: string; allocated: number; realized?: number; description?: string | null }
-        Update: { id?: string; year?: number; category?: string; title?: string; allocated?: number; realized?: number; description?: string | null }
+        Row: {
+          allocated: number
+          category: string
+          description: string | null
+          id: string
+          realized: number
+          title: string
+          year: number
+        }
+        Insert: {
+          allocated: number
+          category: string
+          description?: string | null
+          id: string
+          realized?: number
+          title: string
+          year?: number
+        }
+        Update: {
+          allocated?: number
+          category?: string
+          description?: string | null
+          id?: string
+          realized?: number
+          title?: string
+          year?: number
+        }
+        Relationships: []
       }
-      projects: {
-        Row: { id: string; title: string; category: string; dusun_id: string; budget: number; realized_budget: number; start_date: string; end_date: string; progress: number; status: string; description: string | null; contractor: string | null; lat: number; lng: number }
-        Insert: { id?: string; title: string; category: string; dusun_id: string; budget: number; realized_budget?: number; start_date: string; end_date: string; progress?: number; status?: string; description?: string | null; contractor?: string | null; lat: number; lng: number }
-        Update: { id?: string; title?: string; category?: string; dusun_id?: string; budget?: number; realized_budget?: number; start_date?: string; end_date?: string; progress?: number; status?: string; description?: string | null; contractor?: string | null; lat?: number; lng?: number }
+      bansos_stats: {
+        Row: {
+          dusun_id: string | null
+          id: string
+          jumlah_penerima: number
+          program: string
+          tahun: number
+        }
+        Insert: {
+          dusun_id?: string | null
+          id?: string
+          jumlah_penerima: number
+          program: string
+          tahun: number
+        }
+        Update: {
+          dusun_id?: string | null
+          id?: string
+          jumlah_penerima?: number
+          program?: string
+          tahun?: number
+        }
+        Relationships: []
+      }
+      desa_stats_bansos: {
+        Row: {
+          blt: number | null
+          bpnt: number | null
+          created_at: string | null
+          dusun_id: string
+          id: string
+          pkh: number | null
+        }
+        Insert: {
+          blt?: number | null
+          bpnt?: number | null
+          created_at?: string | null
+          dusun_id: string
+          id?: string
+          pkh?: number | null
+        }
+        Update: {
+          blt?: number | null
+          bpnt?: number | null
+          created_at?: string | null
+          dusun_id?: string
+          id?: string
+          pkh?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desa_stats_bansos_dusun_id_fkey"
+            columns: ["dusun_id"]
+            isOneToOne: true
+            referencedRelation: "desa_stats_dusun"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      desa_stats_dusun: {
+        Row: {
+          created_at: string | null
+          dusun_name: string
+          id: string
+          kk: number
+          penduduk: number
+          sawah: number
+        }
+        Insert: {
+          created_at?: string | null
+          dusun_name: string
+          id?: string
+          kk?: number
+          penduduk?: number
+          sawah?: number
+        }
+        Update: {
+          created_at?: string | null
+          dusun_name?: string
+          id?: string
+          kk?: number
+          penduduk?: number
+          sawah?: number
+        }
+        Relationships: []
+      }
+      desa_stats_pekerjaan: {
+        Row: {
+          created_at: string | null
+          id: string
+          jumlah: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          jumlah?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          jumlah?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      desa_stats_pendidikan: {
+        Row: {
+          created_at: string | null
+          id: string
+          jumlah: number
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          jumlah?: number
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          jumlah?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      desa_stats_usia: {
+        Row: {
+          created_at: string | null
+          dusun_id: string
+          id: string
+          usia_0_4: number | null
+          usia_10_14: number | null
+          usia_15_19: number | null
+          usia_20_29: number | null
+          usia_30_39: number | null
+          usia_40_49: number | null
+          usia_5_9: number | null
+          usia_50_59: number | null
+          usia_60_69: number | null
+          usia_70_plus: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          dusun_id: string
+          id?: string
+          usia_0_4?: number | null
+          usia_10_14?: number | null
+          usia_15_19?: number | null
+          usia_20_29?: number | null
+          usia_30_39?: number | null
+          usia_40_49?: number | null
+          usia_5_9?: number | null
+          usia_50_59?: number | null
+          usia_60_69?: number | null
+          usia_70_plus?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          dusun_id?: string
+          id?: string
+          usia_0_4?: number | null
+          usia_10_14?: number | null
+          usia_15_19?: number | null
+          usia_20_29?: number | null
+          usia_30_39?: number | null
+          usia_40_49?: number | null
+          usia_5_9?: number | null
+          usia_50_59?: number | null
+          usia_60_69?: number | null
+          usia_70_plus?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "desa_stats_usia_dusun_id_fkey"
+            columns: ["dusun_id"]
+            isOneToOne: true
+            referencedRelation: "desa_stats_dusun"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dusun: {
+        Row: {
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          description?: string | null
+          id: string
+          name: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      population_stats: {
+        Row: {
+          dusun_id: string | null
+          id: string
+          indikator: string
+          nilai: number
+          tahun: number
+        }
+        Insert: {
+          dusun_id?: string | null
+          id?: string
+          indikator: string
+          nilai: number
+          tahun: number
+        }
+        Update: {
+          dusun_id?: string | null
+          id?: string
+          indikator?: string
+          nilai?: number
+          tahun?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
-          id: string; full_name: string | null; email: string | null; role: string;
-          dusun_id: string | null;
-          nik: string | null; tempat_lahir: string | null; tanggal_lahir: string | null;
-          jenis_kelamin: string | null; agama: string | null; pekerjaan: string | null;
-          alamat: string | null; rt: string | null; rw: string | null;
+          agama: string | null
+          alamat: string | null
+          dusun_id: number | null
+          email: string | null
+          full_name: string | null
+          id: string
+          jenis_kelamin: string | null
+          nik: string | null
+          pekerjaan: string | null
+          role: string | null
+          rt: string | null
+          rw: string | null
+          tanggal_lahir: string | null
+          tempat_lahir: string | null
         }
         Insert: {
-          id: string; full_name?: string | null; email?: string | null; role?: string;
-          dusun_id?: string | null;
-          nik?: string | null; tempat_lahir?: string | null; tanggal_lahir?: string | null;
-          jenis_kelamin?: string | null; agama?: string | null; pekerjaan?: string | null;
-          alamat?: string | null; rt?: string | null; rw?: string | null;
+          agama?: string | null
+          alamat?: string | null
+          dusun_id?: number | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          jenis_kelamin?: string | null
+          nik?: string | null
+          pekerjaan?: string | null
+          role?: string | null
+          rt?: string | null
+          rw?: string | null
+          tanggal_lahir?: string | null
+          tempat_lahir?: string | null
         }
         Update: {
-          id?: string; full_name?: string | null; email?: string | null; role?: string;
-          dusun_id?: string | null;
-          nik?: string | null; tempat_lahir?: string | null; tanggal_lahir?: string | null;
-          jenis_kelamin?: string | null; agama?: string | null; pekerjaan?: string | null;
-          alamat?: string | null; rt?: string | null; rw?: string | null;
+          agama?: string | null
+          alamat?: string | null
+          dusun_id?: number | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          jenis_kelamin?: string | null
+          nik?: string | null
+          pekerjaan?: string | null
+          role?: string | null
+          rt?: string | null
+          rw?: string | null
+          tanggal_lahir?: string | null
+          tempat_lahir?: string | null
         }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          budget: number
+          category: string
+          contractor: string | null
+          description: string | null
+          dusun_id: string | null
+          end_date: string | null
+          id: string
+          lat: number | null
+          lng: number | null
+          progress: number
+          realized_budget: number
+          start_date: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          budget?: number
+          category: string
+          contractor?: string | null
+          description?: string | null
+          dusun_id?: string | null
+          end_date?: string | null
+          id: string
+          lat?: number | null
+          lng?: number | null
+          progress?: number
+          realized_budget?: number
+          start_date?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          budget?: number
+          category?: string
+          contractor?: string | null
+          description?: string | null
+          dusun_id?: string | null
+          end_date?: string | null
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          progress?: number
+          realized_budget?: number
+          start_date?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "projects_dusun_id_fkey"
+            columns: ["dusun_id"]
+            isOneToOne: false
+            referencedRelation: "dusun"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_updates: {
+        Row: {
+          created_at: string
+          id: string
+          is_sample: boolean | null
+          note: string
+          photo: string | null
+          report_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_sample?: boolean | null
+          note: string
+          photo?: string | null
+          report_id?: string | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_sample?: boolean | null
+          note?: string
+          photo?: string | null
+          report_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_updates_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reports: {
         Row: {
-          id: string; ticket_code: string; judul: string; deskripsi: string; kategori: string; dusun_id: number;
-          rw: number; status: string; reporter_id: string | null; is_anonymous: boolean; lat: number | null; lng: number | null;
-          confirmation_count: number; mismatch_flag: boolean; rating: number | null; created_at: string;
+          anonymous: boolean | null
+          category: string
+          confirmations: number | null
+          created_at: string
+          description: string
+          dusun_id: string | null
+          id: string
+          is_sample: boolean | null
+          lat: number
+          lng: number
+          mismatch: boolean | null
+          rating: number | null
+          reporter_id: string | null
+          rw: string
+          status: string
+          ticket: string
+          title: string
+          user_id: string | null
         }
         Insert: {
-          id?: string; ticket_code?: string; judul: string; deskripsi: string; kategori: string; dusun_id: number;
-          rw: number; status?: string; reporter_id?: string | null; is_anonymous?: boolean; lat?: number | null; lng?: number | null;
-          mismatch_flag?: boolean;
+          anonymous?: boolean | null
+          category: string
+          confirmations?: number | null
+          created_at?: string
+          description: string
+          dusun_id?: string | null
+          id?: string
+          is_sample?: boolean | null
+          lat: number
+          lng: number
+          mismatch?: boolean | null
+          rating?: number | null
+          reporter_id?: string | null
+          rw: string
+          status?: string
+          ticket: string
+          title: string
+          user_id?: string | null
         }
         Update: {
-          id?: string; ticket_code?: string; judul?: string; deskripsi?: string; kategori?: string; dusun_id?: number;
-          rw?: number; status?: string; reporter_id?: string | null; is_anonymous?: boolean; lat?: number | null; lng?: number | null;
-          confirmation_count?: number; mismatch_flag?: boolean; rating?: number | null;
+          anonymous?: boolean | null
+          category?: string
+          confirmations?: number | null
+          created_at?: string
+          description?: string
+          dusun_id?: string | null
+          id?: string
+          is_sample?: boolean | null
+          lat?: number
+          lng?: number
+          mismatch?: boolean | null
+          rating?: number | null
+          reporter_id?: string | null
+          rw?: string
+          status?: string
+          ticket?: string
+          title?: string
+          user_id?: string | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "reports_dusun_id_fkey"
+            columns: ["dusun_id"]
+            isOneToOne: false
+            referencedRelation: "dusun"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      report_updates: {
-        Row: { id: string; report_id: string; status: string; note: string; photo: string | null; created_at: string }
-        Insert: { id?: string; report_id: string; status: string; note: string; photo?: string | null }
-        Update: { id?: string; report_id?: string; status?: string; note?: string; photo?: string | null }
+      service_attachments: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          path: string
+          request_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          path: string
+          request_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          path?: string
+          request_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_attachments_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_requests: {
         Row: {
-          id: string; ticket: string; type: string; email: string; name: string;
-          purpose: string; note: string; status: string; created_at: string;
-          pemohon_data: Record<string, unknown> | null;
-          data: Record<string, unknown> | null;
-          instansi_tujuan: string | null;
-          tanggal_dibutuhkan: string | null;
+          created_at: string
+          data: Json | null
+          email: string
+          id: string
+          instansi_tujuan: string | null
+          is_sample: boolean | null
+          name: string
+          note: string | null
+          pemohon_data: Json | null
+          purpose: string
+          status: string
+          tanggal_dibutuhkan: string | null
+          ticket: string
+          type: string
+          user_id: string | null
         }
         Insert: {
-          id?: string; ticket?: string; type: string; email: string; name: string;
-          purpose: string; note?: string; status?: string;
-          pemohon_data?: Record<string, unknown>; data?: Record<string, unknown>;
-          instansi_tujuan?: string; tanggal_dibutuhkan?: string;
+          created_at?: string
+          data?: Json | null
+          email: string
+          id?: string
+          instansi_tujuan?: string | null
+          is_sample: boolean | null
+          name: string
+          note?: string | null
+          pemohon_data?: Json | null
+          purpose: string
+          status?: string
+          tanggal_dibutuhkan?: string | null
+          ticket: string
+          type: string
+          user_id?: string | null
         }
         Update: {
-          id?: string; ticket?: string; type?: string; email?: string; name?: string;
-          purpose?: string; note?: string; status?: string;
-          pemohon_data?: Record<string, unknown>; data?: Record<string, unknown>;
-          instansi_tujuan?: string; tanggal_dibutuhkan?: string;
+          created_at?: string
+          data?: Json | null
+          email?: string
+          id?: string
+          instansi_tujuan?: string | null
+          is_sample?: boolean | null
+          name?: string
+          note?: string | null
+          pemohon_data?: Json | null
+          purpose?: string
+          status?: string
+          tanggal_dibutuhkan?: string | null
+          ticket?: string
+          type?: string
+          user_id?: string | null
         }
+        Relationships: []
       }
       service_updates: {
-        Row: { id: string; request_id: string; status: string; note: string; created_at: string }
-        Insert: { id?: string; request_id: string; status: string; note: string }
-        Update: { id?: string; request_id?: string; status?: string; note?: string }
+        Row: {
+          created_at: string
+          id: string
+          is_sample: boolean | null
+          note: string
+          request_id: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_sample?: boolean | null
+          note: string
+          request_id?: string | null
+          status: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_sample?: boolean | null
+          note?: string
+          request_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_updates_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "service_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      service_attachments: {
-        Row: { id: string; request_id: string; name: string; path: string; created_at: string }
-        Insert: { id?: string; request_id: string; name: string; path: string }
-        Update: { id?: string; request_id?: string; name?: string; path?: string }
-      }
-      desa_stats_dusun: {
-        Row: { id: string; dusun_name: string; penduduk: number; kk: number; sawah: number; created_at: string }
-        Insert: { id?: string; dusun_name: string; penduduk: number; kk: number; sawah: number }
-        Update: { id?: string; dusun_name?: string; penduduk?: number; kk?: number; sawah?: number }
-      }
-      desa_stats_usia: {
-        Row: { id: string; dusun_id: string; usia_0_4: number; usia_5_9: number; usia_10_14: number; usia_15_19: number; usia_20_29: number; usia_30_39: number; usia_40_49: number; usia_50_59: number; usia_60_69: number; usia_70_plus: number; created_at: string }
-        Insert: { id?: string; dusun_id: string; usia_0_4?: number; usia_5_9?: number; usia_10_14?: number; usia_15_19?: number; usia_20_29?: number; usia_30_39?: number; usia_40_49?: number; usia_50_59?: number; usia_60_69?: number; usia_70_plus?: number }
-        Update: { id?: string; dusun_id?: string; usia_0_4?: number; usia_5_9?: number; usia_10_14?: number; usia_15_19?: number; usia_20_29?: number; usia_30_39?: number; usia_40_49?: number; usia_50_59?: number; usia_60_69?: number; usia_70_plus?: number }
-      }
-      desa_stats_pekerjaan: {
-        Row: { id: string; name: string; jumlah: number; created_at: string }
-        Insert: { id?: string; name: string; jumlah: number }
-        Update: { id?: string; name?: string; jumlah?: number }
-      }
-      desa_stats_pendidikan: {
-        Row: { id: string; name: string; jumlah: number; created_at: string }
-        Insert: { id?: string; name: string; jumlah: number }
-        Update: { id?: string; name?: string; jumlah?: number }
-      }
-      bansos_stats: {
-        Row: { id: string; tahun: number; dusun_id: string; program: string; jumlah_penerima: number }
-        Insert: { id?: string; tahun: number; dusun_id: string; program: string; jumlah_penerima: number }
-        Update: { id?: string; tahun?: number; dusun_id?: string; program?: string; jumlah_penerima?: number }
-      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      is_staff: { Args: never; Returns: boolean }
+    }
+    Enums: {
+      [_ in never]: never
     }
   }
 }
