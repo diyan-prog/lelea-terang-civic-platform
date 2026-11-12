@@ -33,7 +33,7 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
 
 ### Akun Demo (Untuk Mode Database)
 Jika menggunakan database Supabase asli (`VITE_DEMO_MODE=false`), gunakan kredensial berikut:
-- **Admin**: `admin@gmai.com` / `leleaterang` (Akses penuh ke dashboard admin)
+- **Admin**: `admin@gmail.com` / `leleaterang` (Akses penuh ke dashboard admin)
 - **Warga (Arif)**: `arif@gmail.com` / `123456789` (Akses fitur lapor dan layanan warga)
 
 ---
