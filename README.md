@@ -30,7 +30,11 @@ Gunakan langkah ini untuk mencoba aplikasi secara instan tanpa perlu setup datab
    npm run dev
    ```
    Aplikasi berjalan di [http://localhost:8443](http://localhost:8443).
-   *Login demo: gunakan email dan password apa saja.*
+
+### Akun Demo (Untuk Mode Database)
+Jika menggunakan database Supabase asli (`VITE_DEMO_MODE=false`), gunakan kredensial berikut:
+- **Admin**: `admin@lelea.id` / `password123` (Akses penuh ke dashboard admin)
+- **Warga (Arif)**: `arif@lelea.id` / `password123` (Akses fitur lapor dan layanan warga)
 
 ---
 
